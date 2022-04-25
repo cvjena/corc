@@ -1,14 +1,9 @@
-from importlib.metadata import PackageNotFoundError, version  # pragma: no cover
+"""
+Copyright (c) Computer Vision Group - FSU Jena
 
-try:
-    # Change here if project is renamed and does not equal the package name
-    dist_name = __name__
-    __version__ = version(dist_name)
-except PackageNotFoundError:  # pragma: no cover
-    __version__ = "unknown"
-finally:
-    del version, PackageNotFoundError
+Author: Tim Büchner
+Email: tim.buechner@uni-jena.de
+"""
+__all__ = ["utils", "core", "landmarks"]
 
-__all__ = ["utils", "core", "curve", "landmarks", "sensor"]
-
-from corc import core, curve, landmarks, sensor, utils
+from corc import core, landmarks, utils
