@@ -10,7 +10,7 @@ import math
 import igraph
 import numpy as np
 from scipy import interpolate, ndimage
-from scipy.spatial import distance, qhull
+from scipy.spatial import qhull
 
 
 def to_spline_3d(
@@ -52,8 +52,10 @@ def to_spline_3d(
 
     if kwargs["fix_end_point"]:
         radial_slice = fix_end_point(radial_slice, crop_radius)
+    else:
+        radial_slice = np.append(radial_slice, [[0.0, 0.0]], axis=0)
 
-    p_spline_2d = spline_2d(radial_slice, sample_space, **kwargs)
+    p_spline_2d = spline_2d(radial_slice, sample_space)
 
     # add the x-dimension back again to the points
     p_spline_3d: np.ndarray = np.hstack(
@@ -89,9 +91,7 @@ def fix_end_point(radial_slice: np.ndarray, crop_radius: float) -> np.ndarray:
     return np.append(radial_slice, [strechted_end_point], axis=0)
 
 
-def spline_2d(
-    radial_slice: np.ndarray, sample_space: np.ndarray, **kwargs
-) -> np.ndarray:
+def spline_2d(radial_slice: np.ndarray, sample_space: np.ndarray) -> np.ndarray:
     """Find the best 2d spline for a given radial slice
 
     Compute the best fitting spline for a given radial slice.
@@ -102,20 +102,13 @@ def spline_2d(
         radial slice which contains the points (unordered is ok)
     sample_space : np.ndarray
         sample space from which the spline points will be sampled
-    kwargs : dict, optional
-        keyword arguments, see below
-        graph_fit : bool, optional
-            if True, the graph_fit will be used instead of the distance_fit
-            this is part of the newly developed spline fitting algorithm
 
     Returns
     -------
     np.ndarray
         spline points describing the 2d slice
     """
-    if kwargs.get("graph_fit", True):
-        return graph_fit(radial_slice, sample_space)
-    return distance_fit(radial_slice, sample_space)
+    return graph_fit(radial_slice, sample_space)
 
 
 def graph_fit(radial_slice: np.ndarray, sample_space: np.ndarray) -> np.ndarray:
@@ -164,106 +157,3 @@ def graph_fit(radial_slice: np.ndarray, sample_space: np.ndarray) -> np.ndarray:
     values[:, 0] = ndimage.gaussian_filter1d(values[:, 0], 1, axis=0)
     values[:, 1] = ndimage.gaussian_filter1d(values[:, 1], 1, axis=0)
     return values
-
-
-def distance_fit(radial_slice: np.ndarray, sample_space: np.ndarray) -> np.ndarray:
-    """Fit a spline to the radial slice
-
-    Compute the best fitting spline for a given radial slice based on the points
-    ordering.
-
-    Parameters
-    ----------
-    radial_slice : np.ndarray
-        radial slice which contains the points (unordered is ok)
-    sample_space : np.ndarray
-        sample space from which the spline points will be sampled
-
-    Returns
-    -------
-    np.ndarray
-        spline points describing the 2d slice
-    """
-    fitted_by_x = spline_2d_simple_fit(argsort_by_xdist(radial_slice), sample_space)
-    fitted_by_o = spline_2d_simple_fit(argsort_by_odist(radial_slice), sample_space)
-
-    # check which computed spline is closest to the original radial points
-    # with the Hausdorff distance
-    hd_xdist = min(
-        distance.directed_hausdorff(u=fitted_by_x, v=radial_slice),
-        distance.directed_hausdorff(u=radial_slice, v=fitted_by_x),
-    )
-    hd_odist = min(
-        distance.directed_hausdorff(u=fitted_by_o, v=radial_slice),
-        distance.directed_hausdorff(u=radial_slice, v=fitted_by_o),
-    )
-
-    return fitted_by_x if hd_xdist[0] < hd_odist[0] else fitted_by_o
-
-
-def argsort_by_xdist(values: np.ndarray) -> np.ndarray:
-    """Sort an array by the x-coordinate
-
-    Parameters
-    ----------
-    values : np.ndarray
-        array to be sorted
-
-    Returns
-    -------
-    np.ndarray
-        sorted array
-    """
-    return values[np.argsort(values[:, 0])]
-
-
-def argsort_by_odist(values: np.ndarray):
-    """Sort an array by the distance to the center of coordinate system
-
-    Parameters
-    ----------
-    values : np.ndarray
-        array to be sorted
-
-    Returns
-    -------
-    np.ndarray
-        sorted array
-    """
-    dist = np.sqrt(values[:, 0] * values[:, 0] + values[:, 1] * values[:, 1])
-    return values[np.argsort(dist)]
-
-
-def spline_2d_simple_fit(
-    radical_slice: np.ndarray, sample_space: np.ndarray
-) -> np.ndarray:
-    """Fit a 2d spline into a 2d curve
-
-    Parameters
-    ----------
-    radical_slice : np.ndarray
-        array of points which describe the 2d slice
-    sample_space : np.ndarray
-        sample space from which the spline points will be sampled
-
-    Returns
-    -------
-    np.ndarray
-        spline points describing the 2d slice
-    """
-
-    last_point = radical_slice[-1]
-
-    radical_slice[:, 0] = ndimage.gaussian_filter1d(radical_slice[:, 0], 2, axis=0)
-    radical_slice[:, 1] = ndimage.gaussian_filter1d(radical_slice[:, 1], 2, axis=0)
-    radical_slice[0] = 0
-    radical_slice[-1] = last_point
-
-    dist = np.cumsum(np.linalg.norm(np.diff(radical_slice, axis=0), axis=1))
-    dist = np.hstack(([0], dist)) / dist[-1]
-    splines = interpolate.interp1d(
-        dist, radical_slice, kind="cubic", axis=0, copy=False
-    )
-    values = splines(sample_space)
-    values[:, 1] = ndimage.gaussian_filter1d(values[:, 1], 1, axis=0)
-    return values[:128]

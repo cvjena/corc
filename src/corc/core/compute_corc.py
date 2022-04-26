@@ -49,9 +49,6 @@ def compute_corc(
     processing kwargs: dict, optional
         fix_end_point: bool, optional
             fix the end point of the spline. Default to True.
-        graph_fit: bool, optional
-            whether to use the new graph fit algorithm. Default to True.
-
 
     Returns
     -------
