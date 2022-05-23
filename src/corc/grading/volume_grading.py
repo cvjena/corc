@@ -9,7 +9,7 @@ __all__ = ["volume_grading"]
 import numpy as np
 
 
-def volume_grading(curves: np.ndarray, n_curves: int, n_points) -> float:
+def volume_grading(curves: np.ndarray, n_curves: int, n_points: int) -> float:
     """Compute the CORC volume grading.
 
     Parameters
