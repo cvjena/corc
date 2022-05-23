@@ -8,10 +8,10 @@ If you use any part of the code for your own research or development, please use
 The code features several processing steps which can be used independently from each other:
 
 *  Loading of different facial landmark formats:
-    * Basic 68 system (dlib)
-    * 3DFE
-    * 3DFE-MVLM
-    * BP4D
+    * [68](http://dlib.net/imaging.html#shape_predictor)
+    * [3DFE](http://www.cs.binghamton.edu/~lijun/Research/3DFE/3DFE_Analysis.html)
+    * [3DFE-MVLM](http://arxiv.org/abs/1910.06007)
+    * [BP4D](http://www.cs.binghamton.edu/~lijun/Research/3DFE/3DFE_Analysis.html)
     * Custom landmarking system by implementing an inheriting class of `corc.landmarks.Landmarks`.
 * Loading of different point-cloud/mesh formats:
     * `.ply`
