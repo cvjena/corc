@@ -1,6 +1,6 @@
 # corc - Computation of Radial Curves
 
-This project contains the source code to compute the `Volumetric Facial Palsy Grading` published at the [MIE-2022](https://mie2022.org/). You can find the accompanying paper [here](todo).
+This project contains the source code to compute the `Volumetric Facial Palsy Grading` published at the [MIE-2022](https://mie2022.org/). You can find the accompanying paper [here](https://ebooks.iospress.nl/volumearticle/59591).
 If you use any part of the code for your own research or development, please use the provided citation at the end of the document.
 
 ## Overview
