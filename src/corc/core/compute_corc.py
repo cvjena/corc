@@ -23,20 +23,47 @@ def compute_corc(
     delta: float = 0.015,
     **kwargs,
 ) -> np.ndarray:
-    """Function to extract the curvate features from a point cloud
+    """
+    Compute the radial curve representation of the face.
+    
+    This function computes the radial curve representation of the face.
+    We use the landmarks to estimate the head pose and the nose tip location.
+    The point cloud will be normalized and cropped automatically using these
+    facial information. 
+    Then, we use the radial slices to extract the radial curves of the face.
+    The radial curves will be fitted using a spline and the spline will be
+    smoothed using the Humphrey algorithm.
+    
+    The user can specify the number of curves and points to use for the
+    radial slices and the spline fitting. (n_curves, n_points)
+    
+    The user can also specify the delta to use for the radial slices.
+    (delta)
+
+    As the curves need a normlized face point cloud to work properly,
+    we afterwards reverse the euclidean transformation and return the
+    curves in the original coordinate system.
+
+    TODO: Add option to autocompute the delta based on the face size!        
 
     Parameters
     ----------
     point_cloud : np.ndarray
-        The point cloud of the face
+        The 3D point cloud of the face. The point cloud will be
+        normalized and cropped automatically. We use the landmarks
+        to estimate the nose tip location and use that as the center
+        of the point cloud.
     landmarks : lm.Landmarks
-        The landmarks of the face
+        The 3D landmarks of the face. The landmarks will be used to
+        estimate the nose tip location and head pose.
     delta : float, optional
         The delta to use for the radial slices. Defaults to 0.015.
     n_curves : int, optional
         Number of curves/slices to extract. Defaults to 128.
     n_points : int, optional
-        Number of points to use for the spline. Defaults to 130.
+        Number of points to use for the spline. Defaults to 128.
+        Please note, that during the process two points will be
+        added and removed again, for the spline fitting.
 
     preprocessing kwargs: dict, optional
         perimeter_nose_tip: float
@@ -67,7 +94,9 @@ def compute_corc(
         points_3d_fitted,
         n_curves=n_curves,
         n_points=n_points,
-        iterations=10,
+        alpha=0.5,
+        beta=0.5,
+        iterations=5,
     )
 
     points_3d_fitted = points_3d_fitted.reshape((n_curves, n_points, 3))
