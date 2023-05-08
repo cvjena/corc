@@ -74,11 +74,23 @@ def compute_corc(
     processing kwargs: dict, optional
         fix_end_point: bool, optional
             fix the end point of the spline. Default to True.
+            
+    smoothing kwargs: dict, optional
+        Used in the Humphrey algorithm. Please note we only smooth in the 
+        z-axis direction.
+        
+        smooth_alpha: float, optional
+            the alpha value for the smoothing. Defaults to 0.5.
+        smooth_beta: float, optional
+            the beta value for the smoothing. Defaults to 0.5.
+        smooth_iterations: int, optional
+            the number of iterations for the smoothing. Defaults to 5.
 
     Returns
     -------
     np.ndarray
         The radial curve representation of the face
+        Shape: (n_curves * n_points, 3)
     """
     n_points += 2
     
@@ -94,9 +106,9 @@ def compute_corc(
         points_3d_fitted,
         n_curves=n_curves,
         n_points=n_points,
-        alpha=0.5,
-        beta=0.5,
-        iterations=5,
+        alpha=kwargs.get("smooth_alpha", 0.5),
+        beta=kwargs.get("smooth_beta", 0.5),
+        iterations=kwargs.get("smooth_iterations", 5),
     )
 
     points_3d_fitted = points_3d_fitted.reshape((n_curves, n_points, 3))
