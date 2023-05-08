@@ -94,10 +94,13 @@ def compute_corc(
     """
     n_points += 2
     
+    # TODO maybe we can add the option to do this inplace
     point_cloud_ = copy.deepcopy(point_cloud)
     landmarks_ = copy.deepcopy(landmarks)
 
     point_cloud_, crop_radius, (R, s, T1, T2) = preprocess_point_cloud(point_cloud_, landmarks_, **kwargs)
+    
+    # TODO remove old code
     # calculate the curvature and get the sclice (for visual)
     points_3d_fitted, points_2d_original = corc_feature(
         point_cloud_, crop_radius, delta=delta, n_curves=n_curves, n_points=n_points, **kwargs
@@ -111,6 +114,7 @@ def compute_corc(
         iterations=kwargs.get("smooth_iterations", 5),
     )
 
+    # TODO i think we can do this more efficient
     points_3d_fitted = points_3d_fitted.reshape((n_curves, n_points, 3))
     points_3d_fitted = np.delete(points_3d_fitted, obj=n_points - 2, axis=1)
     points_3d_fitted = np.delete(points_3d_fitted, obj=n_points - 2, axis=1)
