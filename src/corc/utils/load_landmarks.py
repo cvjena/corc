@@ -13,7 +13,7 @@ import pandas as pd
 import scipy.io
 
 
-def load_landmarks(path: pathlib.Path) -> np.ndarray:
+def load_landmarks(path: pathlib.Path, **kwargs) -> np.ndarray:
     """Load landmarks from a file.
 
     Automatically detects the file type and calls the corresponding function.
@@ -31,24 +31,24 @@ def load_landmarks(path: pathlib.Path) -> np.ndarray:
     suffix = path.suffix.lower()
 
     if suffix == ".txt":
-        return load_landmarks_txt(path)
+        return load_landmarks_txt(path, **kwargs)
 
     if suffix == ".csv":
-        return load_landmarks_csv(path)
+        return load_landmarks_csv(path, **kwargs)
 
     if suffix == ".npy":
-        return load_landmarks_npy(path)
+        return load_landmarks_npy(path, **kwargs)
 
     if suffix == ".mat":
-        return load_landmarks_mat(path)
+        return load_landmarks_mat(path, **kwargs)
 
     if suffix == ".bnd":
-        return load_landmarks_bnd(path)
+        return load_landmarks_bnd(path, **kwargs)
 
     raise ValueError(f"Unknown file type: {suffix}")
 
 
-def load_landmarks_txt(path: pathlib.Path) -> np.ndarray:
+def load_landmarks_txt(path: pathlib.Path, **kwargs) -> np.ndarray:
     """Load landmarks from bnd file
 
     Parameters
@@ -67,7 +67,7 @@ def load_landmarks_txt(path: pathlib.Path) -> np.ndarray:
     return landmarks.reshape((-1, 3))
 
 
-def load_landmarks_npy(path: pathlib.Path) -> np.ndarray:
+def load_landmarks_npy(path: pathlib.Path, **kwargs) -> np.ndarray:
     """Load landmarks from bnd file
 
     Parameters
@@ -83,7 +83,7 @@ def load_landmarks_npy(path: pathlib.Path) -> np.ndarray:
     return np.load(path)
 
 
-def load_landmarks_mat(path: pathlib.Path) -> np.ndarray:
+def load_landmarks_mat(path: pathlib.Path, **kwargs) -> np.ndarray:
     """Load landmarks from bnd file
 
     Parameters
@@ -102,24 +102,27 @@ def load_landmarks_mat(path: pathlib.Path) -> np.ndarray:
     return landmarks.reshape((-1, 3))
 
 
-def load_landmarks_csv(path: pathlib.Path) -> np.ndarray:
-    """Load landmarks from bnd file
+def load_landmarks_csv(path: pathlib.Path, **kwargs) -> np.ndarray:
+    """Load landmarks from csv file
 
     Parameters
     ----------
     path : pathlib.Path
-        Path to the bnd file
+        Path to the csv file
 
     Returns
     -------
     np.ndarray
         Array of landmarks
     """
-    landmarks = pd.read_csv(path, sep=",", index_col=0).iloc[0, :].values
-    return landmarks.reshape((-1, 3))
+    landmarks = pd.read_csv(path, sep=kwargs.get("sep", ","), index_col=None)
+    x = landmarks["x"].values
+    y = landmarks["y"].values
+    z = landmarks["z"].values
+    return np.stack((x, y, z), axis=1)
 
 
-def load_landmarks_bnd(path: pathlib.Path) -> np.ndarray:
+def load_landmarks_bnd(path: pathlib.Path, **kwargs) -> np.ndarray:
     """Load landmarks from bnd file
 
     Parameters
