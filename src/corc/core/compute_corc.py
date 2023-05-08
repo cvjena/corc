@@ -37,10 +37,6 @@ def compute_corc(
         Number of curves/slices to extract. Defaults to 128.
     n_points : int, optional
         Number of points to use for the spline. Defaults to 130.
-    kwargs : dict, optional
-        Additional arguments to pass to the estimate_facial_curvature function.
-        debug_vars : bool, optional
-            If should return debug variables. Defaults to False.
 
     preprocessing kwargs: dict, optional
         perimeter_nose_tip: float
@@ -57,7 +53,7 @@ def compute_corc(
     np.ndarray
         The radial curve representation of the face
     """
-    kwargs["debug_vars"] = kwargs.get("debug_vars", False)
+    n_points += 2
     
     point_cloud_ = copy.deepcopy(point_cloud)
     landmarks_ = copy.deepcopy(landmarks)
@@ -70,31 +66,19 @@ def compute_corc(
     points_3d_fitted = humphrey(
         points_3d_fitted,
         n_curves=n_curves,
-        n_points=n_points + 2,
+        n_points=n_points,
         iterations=10,
     )
 
-    points_3d_fitted = points_3d_fitted.reshape(
-        (kwargs["n_curves"], kwargs["n_points"], 3)
-    )
-
-    points_3d_fitted = np.delete(
-        points_3d_fitted, obj=kwargs.get("n_points") - 2, axis=1
-    )
-    points_3d_fitted = np.delete(
-        points_3d_fitted, obj=kwargs.get("n_points") - 2, axis=1
-    )
-    points_3d_fitted = points_3d_fitted.reshape(
-        (kwargs["n_curves"] * (kwargs["n_points"] - 2), 3)
-    )
+    points_3d_fitted = points_3d_fitted.reshape((n_curves, n_points, 3))
+    points_3d_fitted = np.delete(points_3d_fitted, obj=n_points - 2, axis=1)
+    points_3d_fitted = np.delete(points_3d_fitted, obj=n_points - 2, axis=1)
+    points_3d_fitted = points_3d_fitted.reshape((n_curves * (n_points - 2)), 3)
 
     points_3d_fitted += T2
     points_3d_fitted += T1
-    # rotate back
     points_3d_fitted = np.dot(points_3d_fitted, R.T)
     points_3d_fitted /= s
     points_3d_fitted += landmarks.nose_tip()
 
-    if kwargs["debug_vars"]:
-        return points_3d_fitted, (points_2d_original, point_cloud)
     return points_3d_fitted
