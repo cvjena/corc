@@ -18,6 +18,8 @@ from .process import corc_feature
 def compute_corc(
     point_cloud: np.ndarray,
     landmarks: lm.Landmarks,
+    n_curves: int = 128,
+    n_points: int = 128,
     delta: float = 0.015,
     **kwargs,
 ) -> np.ndarray:
@@ -31,12 +33,12 @@ def compute_corc(
         The landmarks of the face
     delta : float, optional
         The delta to use for the radial slices. Defaults to 0.015.
+    n_curves : int, optional
+        Number of curves/slices to extract. Defaults to 128.
+    n_points : int, optional
+        Number of points to use for the spline. Defaults to 130.
     kwargs : dict, optional
         Additional arguments to pass to the estimate_facial_curvature function.
-        n_curves : int, optional
-            Number of curves/slices to extract. Defaults to 128.
-        n_points : int, optional
-            Number of points to use for the spline. Defaults to 130.
         debug_vars : bool, optional
             If should return debug variables. Defaults to False.
 
@@ -55,8 +57,6 @@ def compute_corc(
     np.ndarray
         The radial curve representation of the face
     """
-    kwargs["n_curves"] = kwargs.get("n_curves", 128)
-    kwargs["n_points"] = kwargs.get("n_points", 128) + 2
     kwargs["debug_vars"] = kwargs.get("debug_vars", False)
     
     point_cloud_ = copy.deepcopy(point_cloud)
@@ -65,12 +65,12 @@ def compute_corc(
     point_cloud_, crop_radius, (R, s, T1, T2) = preprocess_point_cloud(point_cloud_, landmarks_, **kwargs)
     # calculate the curvature and get the sclice (for visual)
     points_3d_fitted, points_2d_original = corc_feature(
-        point_cloud_, crop_radius, delta=delta, **kwargs
+        point_cloud_, crop_radius, delta=delta, n_curves=n_curves, n_points=n_points, **kwargs
     )
     points_3d_fitted = humphrey(
         points_3d_fitted,
-        n_curves=kwargs["n_curves"],
-        n_points=kwargs["n_points"],
+        n_curves=n_curves,
+        n_points=n_points + 2,
         iterations=10,
     )
 
