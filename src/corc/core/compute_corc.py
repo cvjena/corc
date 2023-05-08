@@ -7,7 +7,7 @@ Email: tim.buechner@uni-jena.de
 __all__ = ["compute_corc"]
 
 import numpy as np
-
+import copy
 from corc import landmarks as lm
 
 from .postprocess import humphrey
@@ -58,11 +58,14 @@ def compute_corc(
     kwargs["n_curves"] = kwargs.get("n_curves", 128)
     kwargs["n_points"] = kwargs.get("n_points", 128) + 2
     kwargs["debug_vars"] = kwargs.get("debug_vars", False)
+    
+    point_cloud_ = copy.deepcopy(point_cloud)
+    landmarks_ = copy.deepcopy(landmarks)
 
-    point_cloud, crop_radius = preprocess_point_cloud(point_cloud, landmarks, **kwargs)
+    point_cloud_, crop_radius, (R, s, T1, T2) = preprocess_point_cloud(point_cloud_, landmarks_, **kwargs)
     # calculate the curvature and get the sclice (for visual)
     points_3d_fitted, points_2d_original = corc_feature(
-        point_cloud, crop_radius, delta=delta, **kwargs
+        point_cloud_, crop_radius, delta=delta, **kwargs
     )
     points_3d_fitted = humphrey(
         points_3d_fitted,
@@ -84,6 +87,13 @@ def compute_corc(
     points_3d_fitted = points_3d_fitted.reshape(
         (kwargs["n_curves"] * (kwargs["n_points"] - 2), 3)
     )
+
+    points_3d_fitted += T2
+    points_3d_fitted += T1
+    # rotate back
+    points_3d_fitted = np.dot(points_3d_fitted, R.T)
+    points_3d_fitted /= s
+    points_3d_fitted += landmarks.nose_tip()
 
     if kwargs["debug_vars"]:
         return points_3d_fitted, (points_2d_original, point_cloud)
