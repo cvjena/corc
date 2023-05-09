@@ -104,12 +104,9 @@ def compute_corc(
 
     # TODO better crop radius?
     point_cloud_, crop_radius, (R, s, T1, T2) = preprocess_point_cloud(point_cloud_, landmarks_, **kwargs)
-    
-    # TODO remove old code
+
     # calculate the curvature and get the sclice (for visual)
-    points_3d_fitted, points_2d_original = corc_feature(
-        point_cloud_, crop_radius, delta=delta, n_curves=n_curves, n_points=n_points, **kwargs
-    )
+    points_3d_fitted = corc_feature(point_cloud_, crop_radius, delta=delta, n_curves=n_curves, n_points=n_points, **kwargs)
     points_3d_fitted = humphrey(
         points_3d_fitted,
         n_curves=n_curves,

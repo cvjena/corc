@@ -22,7 +22,7 @@ def corc_feature(
     n_points: int = 130,
     delta: Optional[float] = None,
     **kwargs,
-) -> tuple[np.ndarray, np.ndarray]:
+) -> np.ndarray:
     """Estimate the curvature of a face
 
     Extract radial slices around the nose tip and fit splines inside these points.
@@ -49,8 +49,8 @@ def corc_feature(
 
     Returns
     -------
-    tuple[np.ndarray, np.ndarray]
-        the fitted splines and the original slices
+    np.ndarray
+        the radial curve feature
     """
     # we interpolate a bit more and cut the last part to avoid spikes in the end
     # this is not a problem as the end of spline does not contain a lot of information
@@ -73,7 +73,7 @@ def corc_feature(
             ),
             (n_curves * n_points, 3),
         )
-    return spline_results, radial_slices
+    return spline_results
 
 
 def to_radial_slices(
