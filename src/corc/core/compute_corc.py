@@ -6,8 +6,11 @@ Email: tim.buechner@uni-jena.de
 """
 __all__ = ["compute_corc"]
 
-import numpy as np
 import copy
+from typing import Optional
+
+import numpy as np
+
 from corc import landmarks as lm
 
 from .postprocess import humphrey
@@ -20,7 +23,7 @@ def compute_corc(
     landmarks: lm.Landmarks,
     n_curves: int = 128,
     n_points: int = 128,
-    delta: float = 0.015,
+    delta: Optional[float] = None,
     **kwargs,
 ) -> np.ndarray:
     """
@@ -37,14 +40,14 @@ def compute_corc(
     The user can specify the number of curves and points to use for the
     radial slices and the spline fitting. (n_curves, n_points)
     
-    The user can also specify the delta to use for the radial slices.
-    (delta)
+    The parameter delta, used in the calcuation, describes the area, perpendicular,
+    around the radial curve which point to include in the spline computation.
+    We estimate a fitting delta values based on the existing points.
+    However, the value can be overwritten by the user if needed.
 
     As the curves need a normlized face point cloud to work properly,
     we afterwards reverse the euclidean transformation and return the
     curves in the original coordinate system.
-
-    TODO: Add option to autocompute the delta based on the face size!        
 
     Parameters
     ----------
@@ -56,14 +59,15 @@ def compute_corc(
     landmarks : lm.Landmarks
         The 3D landmarks of the face. The landmarks will be used to
         estimate the nose tip location and head pose.
-    delta : float, optional
-        The delta to use for the radial slices. Defaults to 0.015.
     n_curves : int, optional
         Number of curves/slices to extract. Defaults to 128.
     n_points : int, optional
         Number of points to use for the spline. Defaults to 128.
         Please note, that during the process two points will be
         added and removed again, for the spline fitting.
+    delta : float, optional
+        The area around a spline to includes the points for estimating
+        the spline. Defaults to None.
 
     preprocessing kwargs: dict, optional
         perimeter_nose_tip: float
@@ -93,11 +97,12 @@ def compute_corc(
         Shape: (n_curves * n_points, 3)
     """
     n_points += 2
-    
+
     # TODO maybe we can add the option to do this inplace
     point_cloud_ = copy.deepcopy(point_cloud)
     landmarks_ = copy.deepcopy(landmarks)
 
+    # TODO better crop radius?
     point_cloud_, crop_radius, (R, s, T1, T2) = preprocess_point_cloud(point_cloud_, landmarks_, **kwargs)
     
     # TODO remove old code

@@ -6,6 +6,7 @@ Email: tim.buechner@uni-jena.de
 """
 
 import multiprocessing as mp
+from typing import Optional
 
 import numpy as np
 
@@ -17,9 +18,9 @@ from .process_spline import to_spline_3d
 def corc_feature(
     points: np.ndarray,
     crop_radius: float,
-    delta: float = 0.015,
     n_curves: int = 128,
     n_points: int = 130,
+    delta: Optional[float] = None,
     **kwargs,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Estimate the curvature of a face
@@ -33,12 +34,12 @@ def corc_feature(
         vertices of the point cloud
     crop_radius : float
         radius of the crop circle
-    delta : float, optional
-        delta area do decide which points to include. Default to 0.0015.
     n_curves : int, optional
         the number of radial stripes to extract. Defaults to 128.
     n_points : int, optional
         the number of points to use for the spline fitting. Defaults to 130.
+    delta : float, optional
+        delta area do decide which points to include. Default to None.
     kwargs : dict, optional
         additional arguments for `to_spline_3d`
         fix_end_point: bool, optional
@@ -55,7 +56,7 @@ def corc_feature(
     # this is not a problem as the end of spline does not contain a lot of information
     rotations = utils.rotz_v(np.linspace(0, 360, num=n_curves, endpoint=False))
     sample_space = np.linspace(0, 1, n_points, endpoint=True)
-    radial_slices = to_radial_slices(points, rotations, delta, n_curves)
+    radial_slices = to_radial_slices(points, rotations, n_curves, delta)
 
     with mp.Pool() as pool:
         spline_results = np.reshape(
@@ -78,8 +79,8 @@ def corc_feature(
 def to_radial_slices(
     points: np.ndarray,
     rotations: np.ndarray,
-    delta: float = 0.015,
     n_curves: int = 128,
+    delta: Optional[float] = None,
 ) -> np.ndarray:
     """Extract the radial slices around nose tip
 
@@ -93,10 +94,11 @@ def to_radial_slices(
         vertices of the point cloud
     rotations : np.ndarray
         rotation matrices for the virtual planes
-    delta : float, optional
-        delta area do decide which points to include. Default to 0.0015.
     n_curves : int, optional
         the number of radial stripes to extract. Defaults to 128.
+    delta : float, optional
+        delta area do decide which points to include. Default to None.
+        Is computed based on the amount of points if None.
 
     Returns
     -------
@@ -107,6 +109,10 @@ def to_radial_slices(
     radial_slices: list[np.ndarray] = [None] * n_curves  # type: ignore
     points_projection_x: np.ndarray = np.zeros_like(points)
     points_projection_y: np.ndarray = np.zeros_like(points)
+
+    if delta is None:
+        delta = -0.000_1 * (len(points) - 34_000) + 0.008
+
     for i in range(n_curves):
         # intersect the point cloud with a plane whose normal vector is given by the
         # current rotation
