@@ -72,13 +72,16 @@ def compute_scale_between_points(p_a: np.ndarray, p_b: np.ndarray) -> float:
     float
         the scale of the two points
     """
-
-    return 1 / np.linalg.norm(p_a - p_b)
+    if np.all(p_a == p_b):
+        return 0
+    return float(1 / np.linalg.norm(p_a - p_b))
 
 
 def preprocess_point_cloud(
-    points: np.ndarray, landmarks: lm.Landmarks, **kwargs
-) -> tuple[np.ndarray, float]:
+    points: np.ndarray, 
+    landmarks: lm.Landmarks, 
+    **kwargs
+) -> tuple[np.ndarray, float, tuple[np.ndarray, float, np.ndarray, np.ndarray]]:
     """This function preprocess the head point cloud.
 
     These steps include:
@@ -102,8 +105,13 @@ def preprocess_point_cloud(
 
     Returns
     -------
-    tuple[np.ndarray, float]
+    tuple[np.ndarray, float, tuple[np.ndarray, float, np.ndarray, np.ndarray]]
         the preprocessed point cloud and the radius of the head
+        the tuple contains the following information:
+            1. Rotation matrix
+            2. Scale
+            3. Translation vector 1
+            4. Translation vector 2
     """
 
     kwargs["perimeter_nose_tip"] = kwargs.get("perimeter_nose_tip", 0.15)
@@ -167,4 +175,4 @@ def preprocess_point_cloud(
         crop_radius = 1.5
     # but we extend it by 5% to keep more of the forehead
     # crop_radius *= 1.05
-    return points[vertex_distance < crop_radius, :], crop_radius, (rotation_matrix, scale, nose_tip_1, nose_tip_2)
+    return points[vertex_distance < crop_radius, :], float(crop_radius), (rotation_matrix, scale, nose_tip_1, nose_tip_2)
