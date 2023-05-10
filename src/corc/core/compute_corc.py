@@ -129,7 +129,7 @@ def compute_corc(
     -------
     np.ndarray
         The radial curve representation of the face
-        Shape: (n_curves * n_points, 3)
+        Shape: (n_curves, n_points, 3)
     """
     n_points += 2
 
@@ -150,10 +150,6 @@ def compute_corc(
         iterations=kwargs.get("smooth_iterations", 5),
     )
 
-    # TODO i think we can do this more efficient
-    points_3d_fitted = points_3d_fitted.reshape((n_curves, n_points, 3))
-    points_3d_fitted = np.delete(points_3d_fitted, obj=n_points - 2, axis=1)
-    points_3d_fitted = np.delete(points_3d_fitted, obj=n_points - 2, axis=1)
-    points_3d_fitted = points_3d_fitted.reshape((n_curves * (n_points - 2)), 3)
-
+    # Remove the two points we added for the spline fitting
+    points_3d_fitted = points_3d_fitted.reshape((n_curves, n_points, 3))[..., :-2, :]
     return inverse_tranform(points_3d_fitted, *transforms, landmarks_.nose_tip())
