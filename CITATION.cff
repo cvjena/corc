@@ -1,0 +1,48 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Büchner"
+  given-names: "Tim"
+  orcid: "https://orcid.org/0000-0002-6879-552X"
+- family-names: "Sickert"
+  given-names: "Sven"
+  orcid: "https://orcid.org/0000-0002-7795-3905"
+- family-name: Volk
+  given-names: "Gerd Fabian"
+  orcid: "https://orcid.org/0000-0003-1245-6331"
+- family-names: "Guntinas-Lichius"
+  given-names: "Orlando"
+  orcid: "https://orcid.org/0000-0001-9671-0784"
+- family-names: "Denzler"
+  given-names: "Joachim"
+  orcid: "https://orcid.org/0000-0002-3193-3300"
+
+title: "Automatic Objective Severity Grading of Peripheral Facial Palsy Using 3D Radial Curves Extracted from Point Clouds"
+version: 1.0.0
+date-released: 2022-05-23
+url: "https://github.com/cvjena/corc"
+preferred-citation:
+  type: conference-paper
+  authors:
+  - family-names: "Büchner"
+    given-names: "Tim"
+    orcid: "https://orcid.org/0000-0002-6879-552X"
+  - family-names: "Sickert"
+    given-names: "Sven"
+    orcid: "https://orcid.org/0000-0002-7795-3905"
+  - family-name: Volk
+    given-names: "Gerd Fabian"
+    orcid: "https://orcid.org/0000-0003-1245-6331"
+  - family-names: "Guntinas-Lichius"
+    given-names: "Orlando"
+    orcid: "https://orcid.org/0000-0001-9671-0784"
+  - family-names: "Denzler"
+    given-names: "Joachim"
+    orcid: "https://orcid.org/0000-0002-3193-3300"
+  doi: "10.3233/SHTI220433"
+  booktitle: "Studies in Health Technology and Informatics"
+  year: 2022
+  start: 179 # First page number
+  end: 183 # Last page number
+  title: "Automatic Objective Severity Grading of Peripheral Facial Palsy Using 3D Radial Curves Extracted from Point Clouds"
+  volume: 294
