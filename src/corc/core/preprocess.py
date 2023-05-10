@@ -178,6 +178,5 @@ def preprocess_point_cloud(
             crop_radius = 1.5
     else:
         crop_radius *= scale
-        print("Using crop radius of", crop_radius)
 
     return points[vertex_distance < crop_radius, :], float(crop_radius), (scale, nose_tip_1, rotation_matrix, nose_tip_2)
