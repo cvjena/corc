@@ -42,15 +42,12 @@ def to_spline_3d(
     np.ndarray
         spline points describing the 3d slice
     """
-
-    kwargs["fix_end_point"] = kwargs.get("fix_end_point", False)
-
     # estimate the best fitting pline for the given radial slice points
     # for faster memory allocation the slice contains more points than neeeded
     # thus we disard these values and reshape everything
     radial_slice = np.insert(radial_slice, 0, [[0.0, 0.0]], axis=0)
 
-    if kwargs["fix_end_point"]:
+    if kwargs.get("fix_end_point", True):
         radial_slice = fix_end_point(radial_slice, crop_radius)
     else:
         radial_slice = np.append(radial_slice, [[0.0, 0.0]], axis=0)
@@ -81,9 +78,9 @@ def fix_end_point(radial_slice: np.ndarray, crop_radius: float) -> np.ndarray:
     np.ndarray
         radial slice with the end point added
     """
-    current_end_point = radial_slice[np.argmax(radial_slice[:, 0])]
-    scale_factor = crop_radius / math.sqrt(current_end_point[0] ** 2 + current_end_point[1] ** 2)
-    strechted_end_point = current_end_point * scale_factor
+    end_point = np.argmax(np.linalg.norm(radial_slice - radial_slice[0], axis=1)) 
+    scale_factor = crop_radius / math.sqrt(radial_slice[end_point][0] ** 2 + radial_slice[end_point][1] ** 2)
+    strechted_end_point = radial_slice[end_point] * scale_factor
     return np.append(radial_slice, [strechted_end_point], axis=0)
 
 
@@ -126,8 +123,8 @@ def graph_fit(radial_slice: np.ndarray, sample_space: np.ndarray) -> np.ndarray:
     """
     tess = qhull.Delaunay(radial_slice, incremental=False)
     idx0 = 0
-    idx1 = len(radial_slice) - 1
-
+    # compute the point which is furthest away from the first point
+    idx1 = np.argmax(np.linalg.norm(radial_slice - radial_slice[idx0], axis=1))
     tess_amt = len(tess.simplices)
     edge_lst = np.zeros((tess_amt * 3, 2), dtype=np.int32)
     for i in range(tess_amt):
@@ -148,6 +145,7 @@ def graph_fit(radial_slice: np.ndarray, sample_space: np.ndarray) -> np.ndarray:
     curve = tess.points[path_s]
     dist = np.cumsum(np.linalg.norm(np.diff(curve, axis=0), axis=1))
     dist = np.hstack(([0], dist)) / dist[-1]
+
     splines = interpolate.interp1d(dist, curve, kind="linear", axis=0, copy=False)
     values = splines(sample_space)
     values[:, 0] = ndimage.gaussian_filter1d(values[:, 0], 1, axis=0)

@@ -99,7 +99,7 @@ def to_radial_slices(
     points_projection_y: np.ndarray = np.zeros_like(points)
 
     if delta is None:
-        delta = -0.000_1 * (len(points) - 34_000) + 0.008
+        delta = 0.008 #-0.000_1 * (len(points) - 34_000) + 0.008
 
     for i in range(n_curves):
         # intersect the point cloud with a plane whose normal vector is given by the
@@ -107,9 +107,7 @@ def to_radial_slices(
         points_projection_x = np.dot(points, np.dot(rotations[i], utils.AXIS_X))
         points_projection_y = np.dot(points, np.dot(rotations[i], utils.AXIS_Y))
         # extract only the points which are closer than a given delta
-        radial_slice_indices = np.logical_and(
-            np.abs(points_projection_x) < delta, points_projection_y > 0
-        )
+        radial_slice_indices = np.logical_and(np.abs(points_projection_x) < delta, points_projection_y > 0)
         # rotate the indicated points and only look at y and z coordinate value
         radial_slices[i] = np.dot(points[radial_slice_indices], rotations[i])[:, 1:]
     return np.asarray(radial_slices, dtype="object")

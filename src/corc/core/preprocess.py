@@ -176,9 +176,8 @@ def preprocess_point_cloud(
             crop_radius = np.linalg.norm(np.abs(nose_tip_2 - np.nanmean(landmarks.jaw_lower(), axis=0)))
         else:
             crop_radius = 1.5
-        print(crop_radius)
     else:
-        crop_radius = 1.34
-        print(crop_radius)
+        crop_radius *= scale
+        print("Using crop radius of", crop_radius)
 
     return points[vertex_distance < crop_radius, :], float(crop_radius), (scale, nose_tip_1, rotation_matrix, nose_tip_2)
