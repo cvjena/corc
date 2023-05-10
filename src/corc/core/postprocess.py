@@ -75,7 +75,7 @@ def lap_calc(
     vertexes: np.ndarray,
     neighbors: list[list[int]],
     fixed_points: Optional[list[int]] = None,
-) -> sparse.csr_matrix:
+) -> np.ndarray:
     """An implementation of the Laplacian smoothing algorithm.
     based on
     https://github.com/mikedh/trimesh/blob/master/trimesh/smoothing.py
@@ -104,7 +104,7 @@ def lap_calc(
 
     data = np.concatenate([[1.0 / len(n)] * len(n) for n in neighbors])
 
-    matrix = sparse.coo_matrix((data, (row, col)), shape=[len(vertexes)] * 2)
+    matrix = sparse.coo_matrix((data, (row, col)), shape=[len(vertexes)] * 2).toarray()
     return matrix
 
 
