@@ -167,13 +167,18 @@ def preprocess_point_cloud(
     # calculate the distance (easy because centered around the nose)
     vertex_distance = np.linalg.norm(points, axis=1)
 
-    # we use the lower chin as the cropping boarder
-    if landmarks.jaw() is not None and not np.isnan(np.sum(landmarks.jaw())):
-        crop_radius = np.linalg.norm(np.abs(nose_tip_2 - landmarks.jaw()))
-    elif landmarks.jaw_lower() is not None and not np.isnan(landmarks.jaw_lower()).all():
-        crop_radius = np.linalg.norm(np.abs(nose_tip_2 - np.nanmean(landmarks.jaw_lower(), axis=0)))
+    crop_radius = kwargs.get("crop_radius_unit", None)
+    if crop_radius is None:
+        # we use the lower chin as the cropping boarder
+        if landmarks.jaw() is not None and not np.isnan(np.sum(landmarks.jaw())):
+            crop_radius = np.linalg.norm(np.abs(nose_tip_2 - landmarks.jaw()))
+        elif landmarks.jaw_lower() is not None and not np.isnan(landmarks.jaw_lower()).all():
+            crop_radius = np.linalg.norm(np.abs(nose_tip_2 - np.nanmean(landmarks.jaw_lower(), axis=0)))
+        else:
+            crop_radius = 1.5
+        print(crop_radius)
     else:
-        crop_radius = 1.5
-    # but we extend it by 5% to keep more of the forehead
-    # crop_radius *= 1.05
+        crop_radius = 1.34
+        print(crop_radius)
+
     return points[vertex_distance < crop_radius, :], float(crop_radius), (scale, nose_tip_1, rotation_matrix, nose_tip_2)

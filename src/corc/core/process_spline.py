@@ -43,7 +43,7 @@ def to_spline_3d(
         spline points describing the 3d slice
     """
 
-    kwargs["fix_end_point"] = kwargs.get("fix_end_point", True)
+    kwargs["fix_end_point"] = kwargs.get("fix_end_point", False)
 
     # estimate the best fitting pline for the given radial slice points
     # for faster memory allocation the slice contains more points than neeeded
@@ -58,9 +58,7 @@ def to_spline_3d(
     p_spline_2d = spline_2d(radial_slice, sample_space)
 
     # add the x-dimension back again to the points
-    p_spline_3d: np.ndarray = np.hstack(
-        (np.zeros((p_spline_2d.shape[0], 1)), p_spline_2d)
-    ).T
+    p_spline_3d: np.ndarray = np.hstack((np.zeros((p_spline_2d.shape[0], 1)), p_spline_2d)).T
     # rotate the points to the desired location in the face
     return np.dot(rotation, p_spline_3d).T
 
@@ -84,9 +82,7 @@ def fix_end_point(radial_slice: np.ndarray, crop_radius: float) -> np.ndarray:
         radial slice with the end point added
     """
     current_end_point = radial_slice[np.argmax(radial_slice[:, 0])]
-    scale_factor = crop_radius / math.sqrt(
-        current_end_point[0] ** 2 + current_end_point[1] ** 2
-    )
+    scale_factor = crop_radius / math.sqrt(current_end_point[0] ** 2 + current_end_point[1] ** 2)
     strechted_end_point = current_end_point * scale_factor
     return np.append(radial_slice, [strechted_end_point], axis=0)
 

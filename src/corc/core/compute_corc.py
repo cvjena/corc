@@ -109,6 +109,9 @@ def compute_corc(
             the perimeter of the nose tip estimation. Defaults to 0.015
         threshold_z_axis: float
             the threshold for the z-axis. Defaults to 0.1
+        crop_radius_unit: float
+            the radius for the cropping in the unit of the face. Defaults to None.
+            If given, we expect it to be in the same unit as the original point cloud.
 
     processing kwargs: dict, optional
         fix_end_point: bool, optional
@@ -131,13 +134,12 @@ def compute_corc(
         The radial curve representation of the face
         Shape: (n_curves, n_points, 3)
     """
-    n_points += 2
+    n_points += 2# + kwargs.get("fix_end_point", False)
 
     # TODO maybe we can add the option to do this inplace
     point_cloud_ = copy.deepcopy(point_cloud)
     landmarks_ = copy.deepcopy(landmarks)
 
-    # TODO better crop radius?
     point_cloud_, crop_radius, transforms = preprocess_point_cloud(point_cloud_, landmarks_, **kwargs)
 
     points_3d_fitted = corc_feature(point_cloud_, crop_radius, delta=delta, n_curves=n_curves, n_points=n_points, **kwargs)

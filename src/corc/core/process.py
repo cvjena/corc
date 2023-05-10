@@ -59,21 +59,9 @@ def corc_feature(
     radial_slices = to_radial_slices(points, rotations, n_curves, delta)
 
     with mp.Pool() as pool:
-        spline_results = np.reshape(
-            np.asarray(
-                list(
-                    pool.imap(
-                        mp_to_spline_3d,
-                        [
-                            ((s, r, sample_space, crop_radius), kwargs)
-                            for s, r in zip(radial_slices, rotations)
-                        ],
-                    )
-                )
-            ),
-            (n_curves * n_points, 3),
-        )
-    return spline_results
+        args = [((s, r, sample_space, crop_radius), kwargs) for s, r in zip(radial_slices, rotations)]
+        spline_results = np.asarray(list(pool.imap(mp_to_spline_3d, args)))
+    return spline_results.reshape((n_curves * n_points, 3))
 
 
 def to_radial_slices(
