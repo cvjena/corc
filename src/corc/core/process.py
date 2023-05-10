@@ -98,8 +98,7 @@ def to_radial_slices(
     points_projection_x: np.ndarray = np.zeros_like(points)
     points_projection_y: np.ndarray = np.zeros_like(points)
 
-    if delta is None:
-        delta = 0.008 #-0.000_1 * (len(points) - 34_000) + 0.008
+    delta = delta or 0.008
 
     for i in range(n_curves):
         # intersect the point cloud with a plane whose normal vector is given by the
