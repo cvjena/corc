@@ -13,9 +13,9 @@ import numpy as np
 
 from corc import landmarks as lm
 
-from .postprocess import humphrey
-from .preprocess import preprocess_point_cloud
-from .process import corc_feature
+from corc.core.postprocess import humphrey
+from corc.core.preprocess import preprocess_point_cloud
+from corc.core.process import corc_feature
 
 
 def inverse_tranform(

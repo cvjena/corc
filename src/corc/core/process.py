@@ -12,7 +12,7 @@ import numpy as np
 
 from corc import utils
 
-from .process_spline import to_spline_3d
+from corc.core.process_spline import to_spline_3d
 
 
 def corc_feature(
