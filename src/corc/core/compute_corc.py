@@ -7,7 +7,7 @@ Email: tim.buechner@uni-jena.de
 __all__ = ["compute_corc"]
 
 import copy
-from typing import Optional
+from typing import Optional, Union
 
 import numpy as np
 
@@ -16,6 +16,41 @@ from corc import landmarks as lm
 from .postprocess import humphrey
 from .preprocess import preprocess_point_cloud
 from .process import corc_feature
+
+
+def inverse_tranform(
+    pcd: np.ndarray,
+    *transforms: Union[np.ndarray, float],
+) -> np.ndarray:
+    """This function applies the inverse transformation to the point cloud.
+    
+    We given transforms are assumed to be the ones used for the point cloud
+    normalization. We reverse the normalization and return the point cloud.
+    
+    Thus all tranforms are applied in reverse order.
+
+    Args:
+        pcd (np.ndarray): _description_
+
+    Returns:
+        np.ndarray: _description_
+    """
+    if len(transforms) == 0:
+        return pcd
+    
+    for transform in transforms[::-1]:
+        # if it is a rotation matrix
+        if isinstance(transform, np.ndarray):
+            if transform.shape == (3, 3):
+                pcd = np.dot(pcd, transform.T)
+            else:
+                pcd += transform 
+        elif isinstance(transform, float):
+            pcd = pcd / transform 
+        else:
+            raise ValueError(f"Unknown transform type: [{type(transform)}]")
+    
+    return pcd
 
 
 def compute_corc(
@@ -103,9 +138,8 @@ def compute_corc(
     landmarks_ = copy.deepcopy(landmarks)
 
     # TODO better crop radius?
-    point_cloud_, crop_radius, (R, s, T1, T2) = preprocess_point_cloud(point_cloud_, landmarks_, **kwargs)
+    point_cloud_, crop_radius, transforms = preprocess_point_cloud(point_cloud_, landmarks_, **kwargs)
 
-    # calculate the curvature and get the sclice (for visual)
     points_3d_fitted = corc_feature(point_cloud_, crop_radius, delta=delta, n_curves=n_curves, n_points=n_points, **kwargs)
     points_3d_fitted = humphrey(
         points_3d_fitted,
@@ -122,10 +156,4 @@ def compute_corc(
     points_3d_fitted = np.delete(points_3d_fitted, obj=n_points - 2, axis=1)
     points_3d_fitted = points_3d_fitted.reshape((n_curves * (n_points - 2)), 3)
 
-    points_3d_fitted += T2
-    points_3d_fitted += T1
-    points_3d_fitted = np.dot(points_3d_fitted, R.T)
-    points_3d_fitted /= s
-    points_3d_fitted += landmarks.nose_tip()
-
-    return points_3d_fitted
+    return inverse_tranform(points_3d_fitted, *transforms, landmarks_.nose_tip())

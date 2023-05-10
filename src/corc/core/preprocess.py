@@ -4,6 +4,7 @@ Copyright (c) Computer Vision Group - FSU Jena
 Author: Tim Büchner
 Email: tim.buechner@uni-jena.de
 """
+from typing import Union
 import numpy as np
 
 from corc import landmarks as lm
@@ -81,7 +82,7 @@ def preprocess_point_cloud(
     points: np.ndarray, 
     landmarks: lm.Landmarks, 
     **kwargs
-) -> tuple[np.ndarray, float, tuple[np.ndarray, float, np.ndarray, np.ndarray]]:
+) -> tuple[np.ndarray, float, tuple[Union[np.ndarray, float], ...]]:
     """This function preprocess the head point cloud.
 
     These steps include:
@@ -175,4 +176,4 @@ def preprocess_point_cloud(
         crop_radius = 1.5
     # but we extend it by 5% to keep more of the forehead
     # crop_radius *= 1.05
-    return points[vertex_distance < crop_radius, :], float(crop_radius), (rotation_matrix, scale, nose_tip_1, nose_tip_2)
+    return points[vertex_distance < crop_radius, :], float(crop_radius), (scale, nose_tip_1, rotation_matrix, nose_tip_2)
