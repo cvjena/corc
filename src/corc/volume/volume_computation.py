@@ -1,6 +1,8 @@
 __all__ = ["compute_volume", "make_mesh", "split_left_right", "compute_lower_curves_center"]
 
+import matplotlib.path as mpath
 import numpy as np
+from scipy import spatial
 
 
 def compute_angle_segment(
@@ -20,6 +22,163 @@ def compute_angle_segment(
     # compute the new center point
     center_point_n = segment_point - r * direction
     return segment_point, center_point_n
+
+
+def slerp(p0, p1, t):
+    omega = np.arccos(np.dot(p0/np.linalg.norm(p0), p1/np.linalg.norm(p1)))
+    so = np.sin(omega)
+    return np.sin((1.0-t)*omega) / so * p0 + np.sin(t*omega) / so * p1
+
+
+def points_on_sphere(A, B, C, num_points):
+    # A = np.array(A)
+    # B = np.array(B)
+    # C = np.array(C)
+    A_rel = A - C
+    B_rel = B - C
+    
+    points = []
+    for t in np.linspace(0, 1, num_points):
+        P_rel = slerp(A_rel, B_rel, t)
+        P = P_rel + C
+        points.append(P)
+    return np.array(points)
+
+
+def center(a, b, c):
+    # compute the center of the triangle
+    return (a + b + c) / 3
+
+
+def rotation_matrix_from_vectors(vec1, vec2):
+    # Normalize input vectors
+    vec1 = vec1 / np.linalg.norm(vec1)
+    vec2 = vec2 / np.linalg.norm(vec2)
+    
+    # Compute rotation axis and angle
+    axis = np.cross(vec1, vec2)
+    angle = np.arccos(np.dot(vec1, vec2))
+    
+    # Compute rotation matrix using axis-angle representation
+    K = np.array([
+        [0, -axis[2], axis[1]],
+        [axis[2], 0, -axis[0]],
+        [-axis[1], axis[0], 0]
+    ]) # type: ignore
+    identity = np.eye(3)
+    R = identity + np.sin(angle) * K + (1 - np.cos(angle)) * K @ K
+    return R
+
+
+def rotate_plane_to_base_plane(normal, base_plane_normal):
+    # Ensure input vectors are numpy arrays
+    normal = np.array(normal)
+    base_plane_normal = np.array(base_plane_normal)
+    # Compute the rotation matrix
+    R = rotation_matrix_from_vectors(normal, base_plane_normal)
+    return R
+
+
+def triangulate_face_side(curves, curves_underground, right:bool) -> tuple[np.ndarray, np.ndarray]:
+    _, n_points, _ = curves.shape
+    index_curves = np.arange(curves.reshape(-1, 3).shape[0])
+    index_curves = index_curves.reshape(-1, n_points)
+    
+    index_underground = np.arange(curves_underground.reshape(-1, 3).shape[0])
+    index_underground = index_underground.reshape(-1, n_points)
+    index_underground += index_curves.max() + 1
+
+    triangles = [] #np.zeros((faces_per_slice * total_slices , 3), dtype=np.int32)
+
+    # always go pair by pair, with stride 1
+    for p1, p2 in zip(index_curves, index_curves[1:]):
+        # the first triangle is always idx 0 and seconds indices of the pairs
+        #   
+        #  p1[2] - p2[2]
+        #   |    /   |
+        #  p1[1] - p2[1] 
+        #     \    /
+        #        0
+        triangles.append([0, p1[1], p2[1]])
+        for i in range(1, len(p1) - 1):
+            bl = p1[i]
+            br = p2[i]
+            tl = p1[i+1]
+            tr = p2[i+1]
+            triangles.append([bl, tl, br])
+            triangles.append([tl, tr, br])
+
+    for p1, p2 in zip(index_underground, index_underground[1:]):
+        triangles.append([index_underground[0][-1], p2[-2], p1[-2]])
+        for i in range(1, len(p1) - 2):
+            bl = p1[i]
+            br = p2[i]
+            tl = p1[i+1]
+            tr = p2[i+1]
+            triangles.append([bl, tl, br])
+            triangles.append([tl, tr, br])
+
+    # add the connection between the curves and the underground
+    for (p1, p2), (u1, u2) in zip(zip(index_curves, index_curves[1:]), zip(index_underground, index_underground[1:])):
+        triangles.append([p1[-1], u1[1], p2[-1]])
+        triangles.append([p2[-1], u1[1], u2[1]])
+
+
+    outer_index = np.concatenate([np.flip(index_curves[-1, 1:]), index_curves[0], index_underground[0], np.flip(index_underground[-1, :-1])], axis=0)
+    points = np.concatenate([curves.reshape(-1, 3), curves_underground.reshape(-1, 3)], axis=0)
+    outer_points = points[outer_index]
+    # compute the plane these outer_points are on
+    # then rotate them such that the z coordinate is 0 for all points
+    # then compute the delaunay triangulation inside the 2d plane
+    # then rotate the points back to the original position
+
+    # 1. make the outerpoints like A * x = B
+    A = np.concatenate([outer_points[:, :2], np.ones((outer_points.shape[0], 1))], axis=1)
+    B = outer_points[:, 2]
+    x = np.linalg.lstsq(A, B, rcond=None)[0]
+
+    # compute the normal of the plane
+    normal = np.array([x[0], x[1], -1])
+    normal /= np.linalg.norm(normal)
+
+    target_normal = np.array([0, 0, 1])
+
+    R = rotate_plane_to_base_plane(normal, target_normal)
+    outer_points_rotated = outer_points @ R.T
+    # print(outer_points_rotated[:10])
+
+    points_2d = outer_points_rotated[:, :2]
+    # compute the delaunay triangulation
+    tri = spatial.Delaunay(points_2d)
+
+    # check if each triangle is in the convex hull
+    # if not, remove it
+    path = mpath.Path(points_2d, closed=True)
+    tri_centers = []
+    for triangle in tri.simplices:
+        circumcenter_ = center(points_2d[triangle[0]], points_2d[triangle[1]], points_2d[triangle[2]])
+        tri_centers.append(circumcenter_)
+    tri_centers = np.array(tri_centers)
+    inside = path.contains_points(tri_centers)
+    # Filter the triangles that are inside the perimeter
+    inner_triangles = tri.simplices[inside]
+    
+    # now compute the original index
+    for i in range(inner_triangles.shape[0]):
+        for j in range(inner_triangles.shape[1]):
+            inner_triangles[i, j] = outer_index[inner_triangles[i, j]]
+
+    if not right:
+        # the triangles are now in the correct order, but are inverted (clockwise instead of counter-clockwise) so we need to invert them
+        for i in range(inner_triangles.shape[0]):
+            inner_triangles[i] = np.flip(inner_triangles[i])
+
+    triangles.extend(inner_triangles)
+    triangles = np.array(triangles, dtype=np.int32)
+    return points, triangles
+
+
+### Public functions ###
 
 
 def split_left_right(
@@ -92,10 +251,28 @@ def compute_lower_curves_center(curves_l: np.ndarray, factor: float=1.0) -> tupl
 
     return segment_point, center_point_n
 
+def make_mesh(
+    curves: np.ndarray, 
+    segment_point: np.ndarray, 
+    center_point: np.ndarray, 
+    right: bool=True
+) -> tuple[np.ndarray, np.ndarray]:
+    """_summary_
 
-def make_mesh():
-    pass
+    Args:
+        curves (np.ndarray): _description_
 
+    Returns:
+        tuple[np.ndarray, np.ndarray]: _description_
+    """
+    curves_lower = np.zeros_like(curves)
+    for i in range(curves.shape[0]):
+        end_point = curves[i][-1]
+        curves_lower[i] = points_on_sphere(end_point, segment_point, center_point, curves.shape[1])
+    
+    points, triangles = triangulate_face_side(curves, curves_lower, right=right)
+    return points, triangles
+    
 
 def compute_volume():
     pass
