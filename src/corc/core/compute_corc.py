@@ -38,7 +38,7 @@ def inverse_tranform(
     if len(transforms) == 0:
         return pcd
     
-    for transform in transforms[::-1]:
+    for transform in transforms:
         # if it is a rotation matrix
         if isinstance(transform, np.ndarray):
             if transform.shape == (3, 3):
@@ -155,4 +155,4 @@ def compute_corc(
 
     # Remove the two points we added for the spline fitting
     points_3d_fitted = points_3d_fitted.reshape((n_curves, n_points, 3))[..., :-add_points, :]
-    return inverse_tranform(points_3d_fitted, *transforms, landmarks_.nose_tip())
+    return inverse_tranform(points_3d_fitted, *transforms, landmarks.nose_tip())
