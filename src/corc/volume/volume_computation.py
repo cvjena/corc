@@ -1,6 +1,25 @@
-__all__ = ["compute_volume", "make_mesh", "split_left_right"]
+__all__ = ["compute_volume", "make_mesh", "split_left_right", "compute_lower_curves_center"]
 
 import numpy as np
+
+
+def compute_angle_segment(
+    center_point,
+    intersection_point,
+    end_point,
+    distance,
+) -> tuple[np.ndarray, np.ndarray]:
+    direction = center_point - intersection_point
+    direction = -(direction / np.linalg.norm(direction))
+    # outer point is the point on the circle
+    segment_point = center_point + direction * distance 
+    # compute the new center point as these two points form a segment
+    height = np.linalg.norm(intersection_point - segment_point)
+    length = np.linalg.norm(intersection_point - end_point)
+    r = (height**2 + length**2) / (2*height)
+    # compute the new center point
+    center_point_n = segment_point - r * direction
+    return segment_point, center_point_n
 
 
 def split_left_right(
@@ -32,6 +51,46 @@ def split_left_right(
 
     # get the left side of the face
     return curves[idx_l], curves[idx_r]
+
+
+def compute_lower_curves_center(curves_l: np.ndarray, factor: float=1.0) -> tuple[np.ndarray, np.ndarray]:
+    """This function computes the center and intersection point of the lower curves.
+    
+    This than can later be used to compute the lower bounds 
+
+    Args:
+        curves (np.ndarray): Upper curves of the face
+        factor (float): Scaling factor of the lower curves radius
+
+    Returns:
+        tuple[np.ndarray, np.ndarray]: _description_
+    """
+    temp_l = curves_l[ 0]
+    temp_r = curves_l[-1]
+
+    center_point = temp_l[ 0]
+    end_point_l  = temp_l[-1]
+    end_point_r  = temp_r[-1]
+
+    dist_l = np.linalg.norm(center_point - end_point_l)
+    dist_r = np.linalg.norm(center_point - end_point_r)
+
+    dir_l = center_point - end_point_l
+    dir_r = center_point - end_point_r
+
+    dir_l = - (dir_l / np.linalg.norm(dir_l))
+    dir_r = - (dir_r / np.linalg.norm(dir_r))
+
+    intersection = (end_point_l + end_point_r) / 2
+
+    dir_c = center_point - intersection
+    dir_c = -(dir_c / np.linalg.norm(dir_c))
+
+    radius = (dist_l + dist_r) / 2
+    radius *= factor
+    segment_point, center_point_n = compute_angle_segment(center_point, intersection, end_point_l, radius)
+
+    return segment_point, center_point_n
 
 
 def make_mesh():
