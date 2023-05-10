@@ -49,7 +49,6 @@ def inverse_tranform(
             pcd = pcd / transform 
         else:
             raise ValueError(f"Unknown transform type: [{type(transform)}]")
-    
     return pcd
 
 
@@ -134,7 +133,9 @@ def compute_corc(
         The radial curve representation of the face
         Shape: (n_curves, n_points, 3)
     """
-    n_points += 2# + kwargs.get("fix_end_point", False)
+    
+    add_points = 1 + int(kwargs.get("fix_end_point", False))
+    n_points += add_points
 
     # TODO maybe we can add the option to do this inplace
     point_cloud_ = copy.deepcopy(point_cloud)
@@ -153,5 +154,5 @@ def compute_corc(
     )
 
     # Remove the two points we added for the spline fitting
-    points_3d_fitted = points_3d_fitted.reshape((n_curves, n_points, 3))[..., :-2, :]
+    points_3d_fitted = points_3d_fitted.reshape((n_curves, n_points, 3))[..., :-add_points, :]
     return inverse_tranform(points_3d_fitted, *transforms, landmarks_.nose_tip())
