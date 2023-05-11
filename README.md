@@ -71,7 +71,7 @@ from corc import core, grading, landmarks, utils
 
 # we assume you use the basic 68 landmark system in this example
 lm_file = pathlib.Path("path/to/your/landmarks_file.csv")
-pc_file = pathlib.Path("path/to/your/pointcloud_file.csv")
+pc_file = pathlib.Path("path/to/your/pointcloud_file.obj")
 
 # the loaded files will be in the form of a numpy array.
 lm: np.ndarray = utils.load_landmarks(lm_file)
@@ -83,7 +83,6 @@ pc: np.ndarray = utils.load_pointcloud(pc_file)
 radial_curves: np.ndarray = core.compute_corc(
     point_cloud=pc,
     landmarks=landmarks.Landmarks68(lm),
-    delta=0.015,
     n_curves=128,
     n_points=128,
 )
@@ -91,6 +90,45 @@ radial_curves: np.ndarray = core.compute_corc(
 # the computed radial curves are also in the form of the numpy array
 # in this example they have the form of 128x128x3
 grad: float = grading.volume_grading(radial_curves, n_curves=128, n_points=128)
+```
+
+## Advanced Volume Computation
+```python
+import pathlib
+
+import numpy as np
+
+from corc import core, grading, landmarks, utils
+
+# we assume you use the basic 68 landmark system in this example
+lm_file = pathlib.Path("path/to/your/landmarks_file.csv")
+pc_file = pathlib.Path("path/to/your/pointcloud_file.obj")
+
+# the loaded files will be in the form of a numpy array.
+lm: np.ndarray = utils.load_landmarks(lm_file)
+pc: np.ndarray = utils.load_pointcloud(pc_file)
+
+# the landmarks have to forwarded to the correct Landmark class
+# this class handles the correct access of the specific landmark features
+# like eyes, nose-tip, mouth
+radial_curves: np.ndarray = core.compute_corc(
+    point_cloud=pc,
+    landmarks=landmarks.Landmarks68(lm),
+    n_curves=128,
+    n_points=128,
+)
+
+curves_l, curves_r = corc.volume.split_left_right(curves, n_curves=n_curves)
+segment_point, center_point = corc.volume.compute_lower_curves_center(curves_l, factor=1.0)
+
+points_r, triangles_r = corc.volume.make_mesh(curves_r, segment_point, center_point, right=True)
+points_l, triangles_l = corc.volume.make_mesh(curves_l, segment_point, center_point, right=False)
+
+mesh_l, volume_l = corc.volume.compute_volume(points_l, triangles_l)
+mesh_r, volume_r = corc.volume.compute_volume(points_r, triangles_r)
+
+print("L Volume:", volume_l)
+print("R Volume", volume_r)
 ```
 
 ## Citation
