@@ -117,23 +117,35 @@ def points_on_sphere(
     return points
 
 
-def rotation_matrix_from_vectors(vec1, vec2):
+def rotation_matrix_from_vectors(
+    vec1: np.ndarray, 
+    vec2: np.ndarray
+) -> np.ndarray:
+    """Compute rotation matrix from two vectors.
+
+    The usage of quaternions is not necessary as we only need to rotate around
+    the axis orthogonal to the plane defined by the two vectors.
+
+    Args:
+        vec1 (np.ndarray): Vector 1.
+        vec2 (np.ndarray): Vector 2.
+
+    Returns:
+        np.ndarray: Rotation matrix that rotates vec1 to vec2.
+    """
     # Normalize input vectors
     vec1 = vec1 / np.linalg.norm(vec1)
     vec2 = vec2 / np.linalg.norm(vec2)
     
     # Compute rotation axis and angle
-    axis = np.cross(vec1, vec2)
+    axis  = np.cross(vec1, vec2) # orthogonal vector of the plane defined by vec1 and vec2
     angle = np.arccos(np.dot(vec1, vec2))
     
     # Compute rotation matrix using axis-angle representation
-    K = np.array([
-        [0, -axis[2], axis[1]],
-        [axis[2], 0, -axis[0]],
-        [-axis[1], axis[0], 0]
-    ]) # type: ignore
-    identity = np.eye(3)
-    R = identity + np.sin(angle) * K + (1 - np.cos(angle)) * K @ K
+    K = np.array([[0, -axis[2], axis[1]],
+                  [axis[2], 0, -axis[0]],
+                  [-axis[1], axis[0],0]]) # type: ignore
+    R = np.eye(3) + np.sin(angle) * K + (1 - np.cos(angle)) * K @ K
     return R
 
 
