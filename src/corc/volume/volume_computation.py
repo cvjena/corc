@@ -117,11 +117,6 @@ def points_on_sphere(
     return points
 
 
-def center(a, b, c):
-    # compute the center of the triangle
-    return (a + b + c) / 3
-
-
 def rotation_matrix_from_vectors(vec1, vec2):
     # Normalize input vectors
     vec1 = vec1 / np.linalg.norm(vec1)
@@ -228,7 +223,7 @@ def triangulate_face_side(curves, curves_underground, right:bool) -> tuple[np.nd
     path = mpath.Path(points_2d, closed=True)
     tri_centers = []
     for triangle in tri.simplices:
-        circumcenter_ = center(points_2d[triangle[0]], points_2d[triangle[1]], points_2d[triangle[2]])
+        circumcenter_ = (points_2d[triangle[0]] + points_2d[triangle[1]] + points_2d[triangle[2]]) / 3
         tri_centers.append(circumcenter_)
     tri_centers = np.array(tri_centers)
     inside = path.contains_points(tri_centers)
