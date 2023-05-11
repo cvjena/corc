@@ -75,25 +75,46 @@ def compute_angle_segment(
     return S, center_point_n
 
 
-def slerp(p0, p1, t):
+def slerp(p0: np.ndarray, p1: np.ndarray, t: float) -> np.ndarray:
+    """Spherical linear interpolation between two direction vectors.
+
+    Args:
+        p0 (np.ndarray): First direction.
+        p1 (np.ndarray): Second direction.
+        t (float): Interpolation factor.
+
+    Returns:
+        np.ndarray: Direction vector on the sphere between p0 and p1.
+    """
     omega = np.arccos(np.dot(p0/np.linalg.norm(p0), p1/np.linalg.norm(p1)))
     so = np.sin(omega)
     return np.sin((1.0-t)*omega) / so * p0 + np.sin(t*omega) / so * p1
 
 
-def points_on_sphere(A, B, C, num_points):
-    # A = np.array(A)
-    # B = np.array(B)
-    # C = np.array(C)
-    A_rel = A - C
-    B_rel = B - C
-    
-    points = []
-    for t in np.linspace(0, 1, num_points):
-        P_rel = slerp(A_rel, B_rel, t)
-        P = P_rel + C
-        points.append(P)
-    return np.array(points)
+def points_on_sphere(
+    A: np.ndarray, 
+    B: np.ndarray, 
+    C: np.ndarray, 
+    num_points: int
+) -> np.ndarray:
+    """Compute points on the sphere between two points with a given center point.
+
+    Args:
+        A (np.ndarray): A point on the sphere.
+        B (np.ndarray): A point on the sphere.
+        C (np.ndarray): Center point of the sphere.
+        num_points (int): Number of points to compute.
+
+    Returns:
+        np.ndarray: Points on the sphere between A and B.
+    """
+    # compute the direction vectors
+    A_dir = A - C
+    B_dir = B - C
+    points = np.empty((num_points, 3))
+    for i, t in enumerate(np.linspace(0, 1, num_points)):
+        points[i] = C + slerp(A_dir, B_dir, t)
+    return points
 
 
 def center(a, b, c):
