@@ -149,15 +149,6 @@ def rotation_matrix_from_vectors(
     return R
 
 
-def rotate_plane_to_base_plane(normal, base_plane_normal):
-    # Ensure input vectors are numpy arrays
-    normal = np.array(normal)
-    base_plane_normal = np.array(base_plane_normal)
-    # Compute the rotation matrix
-    R = rotation_matrix_from_vectors(normal, base_plane_normal)
-    return R
-
-
 def triangulate_face_side(curves, curves_underground, right:bool) -> tuple[np.ndarray, np.ndarray]:
     _, n_points, _ = curves.shape
     index_curves = np.arange(curves.reshape(-1, 3).shape[0])
@@ -222,7 +213,7 @@ def triangulate_face_side(curves, curves_underground, right:bool) -> tuple[np.nd
 
     target_normal = np.array([0, 0, 1])
 
-    R = rotate_plane_to_base_plane(normal, target_normal)
+    R = rotation_matrix_from_vectors(normal, target_normal)
     outer_points_rotated = outer_points @ R.T
     # print(outer_points_rotated[:10])
 
