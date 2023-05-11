@@ -149,7 +149,27 @@ def rotation_matrix_from_vectors(
     return R
 
 
-def triangulate_face_side(curves, curves_underground, right:bool) -> tuple[np.ndarray, np.ndarray]:
+def triangulate_face_side(
+    curves: np.ndarray, 
+    curves_underground: np.ndarray, 
+    right:bool
+) -> tuple[np.ndarray, np.ndarray]:
+    """Triangulate a face side using the radial curves.
+    
+    This function triangulates a face side using the radial curves. The radial curves
+    are the curves that are perpendicular to the face side. 
+    To create a suitable volume, the triangulation of the face side needs to be connected
+    to the underground curves.
+
+    Args:
+        curves (np.ndarray): Curves which describe the face.
+        curves_underground (np.ndarray): Curves below to fill the volume.
+        right (bool): Whether the face side is on the right side of the face.
+
+    Returns:
+        tuple[np.ndarray, np.ndarray]: Point and face indices of the triangulated face side.
+    """
+
     _, n_points, _ = curves.shape
     index_curves = np.arange(curves.reshape(-1, 3).shape[0])
     index_curves = index_curves.reshape(-1, n_points)
@@ -194,15 +214,19 @@ def triangulate_face_side(curves, curves_underground, right:bool) -> tuple[np.nd
         triangles.append([p2[-1], u1[1], u2[1]])
 
 
+    # the outer points are the side which would connect both face sides with each other.
     outer_index = np.concatenate([np.flip(index_curves[-1, 1:]), index_curves[0], index_underground[0], np.flip(index_underground[-1, :-1])], axis=0)
     points = np.concatenate([curves.reshape(-1, 3), curves_underground.reshape(-1, 3)], axis=0)
     outer_points = points[outer_index]
-    # compute the plane these outer_points are on
-    # then rotate them such that the z coordinate is 0 for all points
+    
+    # the same way of triangulation as above *cannot* be used for the outer points
+    # because they might intersect strangely
+    
+    # compute the plane these outer_points are on then rotate them such that the z coordinate is 0 for all points
     # then compute the delaunay triangulation inside the 2d plane
     # then rotate the points back to the original position
 
-    # 1. make the outerpoints like A * x = B
+    # 1. Compute the plane on which these points reside, in the form ax + by + c = z --> A * x = B
     A = np.concatenate([outer_points[:, :2], np.ones((outer_points.shape[0], 1))], axis=1)
     B = outer_points[:, 2]
     x = np.linalg.lstsq(A, B, rcond=None)[0]
@@ -210,38 +234,22 @@ def triangulate_face_side(curves, curves_underground, right:bool) -> tuple[np.nd
     # compute the normal of the plane
     normal = np.array([x[0], x[1], -1])
     normal /= np.linalg.norm(normal)
-
-    target_normal = np.array([0, 0, 1])
-
-    R = rotation_matrix_from_vectors(normal, target_normal)
+    R = rotation_matrix_from_vectors(normal,  np.array([0, 0, 1])) # we rotate the points such that the normal is the z axis
+    
     outer_points_rotated = outer_points @ R.T
-    # print(outer_points_rotated[:10])
-
     points_2d = outer_points_rotated[:, :2]
     # compute the delaunay triangulation
     tri = spatial.Delaunay(points_2d)
 
-    # check if each triangle is in the convex hull
-    # if not, remove it
+    # check if each triangle is in the convex hull; if not, remove it
     path = mpath.Path(points_2d, closed=True)
-    tri_centers = []
-    for triangle in tri.simplices:
-        circumcenter_ = (points_2d[triangle[0]] + points_2d[triangle[1]] + points_2d[triangle[2]]) / 3
-        tri_centers.append(circumcenter_)
-    tri_centers = np.array(tri_centers)
+    tri_centers = np.sum(points_2d[tri.simplices], axis=1) / 3
     inside = path.contains_points(tri_centers)
-    # Filter the triangles that are inside the perimeter
     inner_triangles = tri.simplices[inside]
+    inner_triangles = outer_index[inner_triangles] # convert the indices back to the original indices
     
-    # now compute the original index
-    for i in range(inner_triangles.shape[0]):
-        for j in range(inner_triangles.shape[1]):
-            inner_triangles[i, j] = outer_index[inner_triangles[i, j]]
-
     if not right:
-        # the triangles are now in the correct order, but are inverted (clockwise instead of counter-clockwise) so we need to invert them
-        for i in range(inner_triangles.shape[0]):
-            inner_triangles[i] = np.flip(inner_triangles[i])
+        inner_triangles = np.flip(inner_triangles, axis=1)
 
     triangles.extend(inner_triangles)
     triangles = np.array(triangles, dtype=np.int32)
