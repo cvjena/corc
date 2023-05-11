@@ -6,22 +6,73 @@ from scipy import spatial
 
 
 def compute_angle_segment(
-    center_point,
-    intersection_point,
-    end_point,
-    distance,
+    C: np.ndarray, # center point
+    I: np.ndarray, # intersection point  # noqa: E741
+    E: np.ndarray, # end point
+    R: float,      # radius of the circle
 ) -> tuple[np.ndarray, np.ndarray]:
-    direction = center_point - intersection_point
+    """Compute angle segment for a given point set.
+    
+    This function computes for a set of points how the angle segment
+    would look like if the radius of circle is changable.
+    The angle segment is defined by the center point, the intersection point
+    and the end point. The radius is the radius of the circle that goes through
+    the center point and the intersection point.
+    
+    We then compute where the new center point would be if the radius is changed.
+    This is done using the Intersecting Chords Theorem.
+    
+    1.  Given C, E, and I, with R Compute where O is.
+                    C
+             h      | <|
+         ----|----- |  |
+         v        v |  |
+      E . - - - - - I  |-r
+         '        > |  |
+          '   l -|  |  |
+            ' ____>_| <| 
+                    S
+                    
+    2.  Then use O and E to compute the new center point, if they would be on the same circle.
+        Compute h (between E and I) and l (between O and E).
+        This is done using the Intersecting Chords Theorem.
+    
+             , - ~ ~ ~ - ,
+         , '               ' ,
+       ,                       ,
+      ,                         ,
+     ,             CN            ,
+     ,             |             ,
+     ,             |             ,
+      E . - - - -  I             ,
+       ,           |            ,
+         ,         |         , '
+           ' - , _ S _ ,  '
+    
+
+    Args:
+        center_point (_type_): Center point which is on the original circle where E currently resides.
+        intersection_point (_type_): Intersection point is the point where C and E are perpendicular to each other.
+        end_point (_type_): End point is the point defining the angle segment on the original circle.
+        radius (_type_): Radius of the of the new circle.
+
+    Returns:
+        tuple[np.ndarray, np.ndarray]: Two points to define the angle segment.
+            First point is the outer point (O) of the angle segment.
+            The second point is the new center point (CN) of the circle that goes through O and E.
+    """
+    
+    direction = C - I
     direction = -(direction / np.linalg.norm(direction))
     # outer point is the point on the circle
-    segment_point = center_point + direction * distance 
+    S = C + direction * R 
     # compute the new center point as these two points form a segment
-    height = np.linalg.norm(intersection_point - segment_point)
-    length = np.linalg.norm(intersection_point - end_point)
+    height = np.linalg.norm(I - S)
+    length = np.linalg.norm(I - E)
     r = (height**2 + length**2) / (2*height)
     # compute the new center point
-    center_point_n = segment_point - r * direction
-    return segment_point, center_point_n
+    center_point_n = S - r * direction
+    return S, center_point_n
 
 
 def slerp(p0, p1, t):
@@ -247,7 +298,7 @@ def compute_lower_curves_center(curves_l: np.ndarray, factor: float=1.0) -> tupl
 
     radius = (dist_l + dist_r) / 2
     radius *= factor
-    segment_point, center_point_n = compute_angle_segment(center_point, intersection, end_point_l, radius)
+    segment_point, center_point_n = compute_angle_segment(center_point, intersection, end_point_l, float(radius))
 
     return segment_point, center_point_n
 
