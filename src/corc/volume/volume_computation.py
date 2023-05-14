@@ -216,7 +216,7 @@ def triangulate_face_side(
 
 
     # the outer points are the side which would connect both face sides with each other.
-    outer_index = np.concatenate([np.flip(index_curves[-1, 1:]), index_curves[0], index_underground[0], np.flip(index_underground[-1, :-1])], axis=0)
+    outer_index = np.concatenate([np.flip(index_curves[-1, 1:]), index_curves[0], index_underground[0, 1:], np.flip(index_underground[-1, 1:-1])], axis=0)
     points = np.concatenate([curves.reshape(-1, 3), curves_underground.reshape(-1, 3)], axis=0)
     outer_points = points[outer_index]
     
