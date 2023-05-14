@@ -357,12 +357,12 @@ def compute_volume(points, triangles):
         import open3d as o3d
     except ImportError:
         print("Open3D not installed, cannot compute volume. Please install with `pip install corc[volume]`")
-        return None, None
+        return None, np.nan
     
     mesh = o3d.geometry.TriangleMesh(o3d.utility.Vector3dVector(points), o3d.utility.Vector3iVector(triangles))
     if not mesh.is_watertight():
         print("Mesh is not watertight, cannot compute volume.")
-        return mesh, None
+        return mesh, np.nan
     
     volume = mesh.get_volume()
     return mesh, volume
