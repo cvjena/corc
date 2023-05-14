@@ -180,7 +180,7 @@ def triangulate_face_side(
 
     triangles = [] #np.zeros((faces_per_slice * total_slices , 3), dtype=np.int32)
 
-    # always go pair by pair, with stride 1
+    # connect the upper curves
     for p1, p2 in zip(index_curves, index_curves[1:]):
         # the first triangle is always idx 0 and seconds indices of the pairs
         #   
@@ -198,6 +198,7 @@ def triangulate_face_side(
             triangles.append([bl, tl, br])
             triangles.append([tl, tr, br])
 
+    # connect the underground curves, but keep a row of triangles for the connection to the upper curves
     for p1, p2 in zip(index_underground, index_underground[1:]):
         triangles.append([index_underground[0][-1], p2[-2], p1[-2]])
         for i in range(1, len(p1) - 2):
