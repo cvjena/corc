@@ -238,10 +238,10 @@ def triangulate_face_side(
     # compute the normal of the plane
     normal = np.array([x[0], x[1], -1])
     normal /= np.linalg.norm(normal)
-    R = rotation_matrix_from_vectors(normal,  np.array([0, 0, 1])) # we rotate the points such that the normal is the z axis
+    R = rotation_matrix_from_vectors(normal,  np.array([1, 0, 0])) # we rotate the points such that the normal is the z axis
     
     outer_points_rotated = outer_points @ R.T
-    points_2d = outer_points_rotated[:, :2]
+    points_2d = outer_points_rotated[:, 1:]
     # compute the delaunay triangulation
     tri = spatial.Delaunay(points_2d)
 
@@ -258,6 +258,9 @@ def triangulate_face_side(
     triangles.extend(inner_triangles)
     triangles = np.array(triangles, dtype=np.int32)
     return points, triangles
+
+
+
 
 
 ### Public functions ###
