@@ -215,6 +215,9 @@ def triangulate_face_side(
         triangles.append([p2[-1], u1[1], u2[1]])
 
 
+    # TODO in rare cases it still might happen that the triangulation is not correct and the model thus 
+    #      not watertight. This is due to the fact that the triangulation is done in 2d and the curves
+    #      might intersect in a strange way. 
     # the outer points are the side which would connect both face sides with each other.
     outer_index = np.concatenate([np.flip(index_curves[-1, 1:]), index_curves[0], index_underground[0, 1:], np.flip(index_underground[-1, 1:-1])], axis=0)
     points = np.concatenate([curves.reshape(-1, 3), curves_underground.reshape(-1, 3)], axis=0)
