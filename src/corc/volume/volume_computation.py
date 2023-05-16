@@ -359,17 +359,20 @@ def make_mesh(
     return points, triangles
     
 
-def compute_volume(points, triangles):
-    try: 
-        import open3d as o3d
-    except ImportError:
-        print("Open3D not installed, cannot compute volume. Please install with `pip install corc[volume]`")
-        return None, np.nan
+def compute_volume(points: np.ndarray, triangles: np.ndarray) -> float:
+    """Compute the Volume of a mesh.
+    Args:
+        points (np.ndarray): The points of the mesh.
+        triangles (np.ndarray): The triangles of the mesh.
+
+    Returns:
+        float: The volume of the mesh.
+    """
+    # do the calculation without open3d
+    volume = 0
+    for tri in triangles:
+        tri_points = points[tri]
+        tri_volume = np.dot(tri_points[0], np.cross(tri_points[1], tri_points[2])) / 6
+        volume += tri_volume
     
-    mesh = o3d.geometry.TriangleMesh(o3d.utility.Vector3dVector(points), o3d.utility.Vector3iVector(triangles))
-    if not mesh.is_watertight():
-        print("Mesh is not watertight, cannot compute volume.")
-        return mesh, np.nan
-    
-    volume = mesh.get_volume()
-    return mesh, volume
+    return volume
