@@ -369,10 +369,13 @@ def compute_volume(points: np.ndarray, triangles: np.ndarray) -> float:
         float: The volume of the mesh.
     """
     # do the calculation without open3d
-    volume = 0
-    for tri in triangles:
-        tri_points = points[tri]
-        tri_volume = np.dot(tri_points[0], np.cross(tri_points[1], tri_points[2])) / 6
-        volume += tri_volume
-    
-    return volume
+    # volume = 0
+    # for tri in triangles:
+    #     tri_points = points[tri]
+    #     tri_volume = np.dot(tri_points[0], np.cross(tri_points[1], tri_points[2])) / 6
+    #     volume += tri_volume
+        
+    # do the same for loop with only numpy
+    tri_points = points[triangles]
+    tri_volume = np.einsum('ijk,ik->i', tri_points, np.cross(tri_points[:, 1] - tri_points[:, 0], tri_points[:, 2] - tri_points[:, 0])) / 6
+    return np.sum(tri_volume) / 3
