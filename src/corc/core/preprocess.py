@@ -141,24 +141,25 @@ def preprocess_point_cloud(
     points = np.dot(points, rotation_matrix)
     landmarks.rotate(rotation_matrix)
 
-    z_side = np.sum(points[:, 2] > 0)
-    # if the majority of points is on the positive side
-    # mirror them to the other side
-    if z_side > points.shape[0] // 4:
-        points[:, 1] *= -1
-        points[:, 2] *= -1
-        landmarks.flip_z()
+    # z_side = np.sum(points[:, 2] > 0)
+    # # if the majority of points is on the positive side
+    # # mirror them to the other side
+    # if z_side > points.shape[0] // 4:
+    #     points[:, 1] *= -1
+    #     points[:, 2] *= -1
+    #     landmarks.flip_z()
 
     # check for better nose tip location: we look around the current nose tip
     # and check if there is a point which is further into the z axis
     # this works as the points area already moved and rotated such that the nose
     # is the  center of the coordinate system
-    vertex_distance = np.linalg.norm(points, axis=1)
-    points_around_nosetip = points[vertex_distance < kwargs["perimeter_nose_tip"]]
-    nose_tip_2 = points_around_nosetip[np.argmax(points_around_nosetip[:, 2])]
-    points[:] -= nose_tip_2
-    landmarks.translate(-nose_tip_2)
-
+    # vertex_distance = np.linalg.norm(points, axis=1)
+    # points_around_nosetip = points[vertex_distance < kwargs["perimeter_nose_tip"]]
+    # nose_tip_2 = points_around_nosetip[np.argmax(points_around_nosetip[:, 2])]
+    # points[:] -= nose_tip_2
+    # landmarks.translate(-nose_tip_2)
+    nose_tip_2 = np.array([0.0, 0.0, 0.0])
+        
     # remove all points infront of the nosetip
     # iow only keep ones which have lower z value as 0.1
     mask_z = points[:, 2] < kwargs["threshold_z_axis"]
