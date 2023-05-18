@@ -137,7 +137,6 @@ def compute_corc(
     add_points = 1 + int(kwargs.get("fix_end_point", False))
     n_points += add_points
 
-    # TODO maybe we can add the option to do this inplace
     point_cloud_ = copy.deepcopy(point_cloud)
     landmarks_ = copy.deepcopy(landmarks)
 
