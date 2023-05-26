@@ -2,7 +2,7 @@ __all__ = ["compute_volume", "make_mesh", "split_left_right", "compute_lower_cur
 
 import matplotlib.path as mpath
 import numpy as np
-from scipy import spatial
+from scipy import spatial, ndimage
 
 
 def compute_angle_segment(
@@ -416,4 +416,9 @@ def volume_pairwise(
 
     # 3. compute the distance between the points
     distances = np.linalg.norm(points_l - points_r, axis=1)
+
+    # smooth the distances
+    distances = ndimage.gaussian_filter(distances.reshape(curves_left.shape[:2]), sigma=1)
+    distances = distances.reshape(-1)
+
     return distances, points_l, points_r
