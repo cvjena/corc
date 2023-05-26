@@ -1,4 +1,4 @@
-__all__ = ["compute_volume", "make_mesh", "split_left_right", "compute_lower_curves_center"]
+__all__ = ["compute_volume", "make_mesh", "split_left_right", "compute_lower_curves_center", "points_on_sphere"]
 
 import matplotlib.path as mpath
 import numpy as np
