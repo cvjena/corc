@@ -14,6 +14,11 @@ def volume_diff_area_map(
     max_distance_mm: float = 10.0,
     line_width: int = 10,
 ) -> dict:
+    assert points_l.ndim == 2
+    assert points_r.ndim == 2
+    assert points_l.shape == points_r.shape    
+
+
     colors = cmap(distances / max_distance_mm)[:, :3]
     line_set = o3d.geometry.LineSet()
     line_set.points = o3d.utility.Vector3dVector(np.concatenate([points_l, points_r]))
