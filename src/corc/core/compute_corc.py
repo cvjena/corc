@@ -207,7 +207,7 @@ def compute_corc_time(
     
     # TODO remove later
     # move slightly to the front
-    points_3d_fitted[..., 2] += 0.01
+    points_3d_fitted += np.array([0.002, -0.002, 0.01])
     
     t = time.time()
     inv = inverse_tranform(points_3d_fitted, *transforms, landmarks.nose_tip())
