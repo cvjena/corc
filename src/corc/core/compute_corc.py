@@ -48,7 +48,7 @@ def inverse_tranform(
         elif isinstance(transform, float):
             pcd = pcd / transform 
         else:
-            raise ValueError(f"Unknown transform type: [{type(transform)}]")
+            raise ValueError(f"Unknown transform type: [{type(transform)}] {transform}")
     return pcd
 
 
@@ -204,6 +204,10 @@ def compute_corc_time(
     # Remove the two points we added for the spline fitting
     points_3d_fitted = points_3d_fitted.reshape((n_curves, n_points, 3))[..., :-add_points, :]
     print(f"[CORC] reshape: {time.time() - t}")
+    
+    # TODO remove later
+    # move slightly to the front
+    points_3d_fitted[..., 2] += 0.01
     
     t = time.time()
     inv = inverse_tranform(points_3d_fitted, *transforms, landmarks.nose_tip())
