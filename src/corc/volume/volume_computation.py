@@ -1,4 +1,4 @@
-__all__ = ["compute_volume", "make_mesh", "split_left_right", "compute_lower_curves_center", "points_on_sphere"]
+__all__ = ["compute_volume", "make_mesh", "split_left_right", "compute_lower_curves_center", "points_on_sphere", "volume_pairwise"]
 
 import matplotlib.path as mpath
 import numpy as np
@@ -379,3 +379,41 @@ def compute_volume(points: np.ndarray, triangles: np.ndarray) -> float:
     tri_points = points[triangles]
     tri_volume = np.einsum('ijk,ik->i', tri_points, np.cross(tri_points[:, 1] - tri_points[:, 0], tri_points[:, 2] - tri_points[:, 0])) / 6
     return np.sum(tri_volume) / 3
+
+def volume_pairwise(
+    curves_left: np.ndarray,
+    curves_right: np.ndarray,
+):
+    def mirror_along_plane(normal, points):
+        for i in range(points.shape[0]):
+            points[i] -= 2 * np.dot(points[i], normal) * normal
+        return points
+
+    """
+    Compute the volume difference between the left and right side of the face.
+    """
+    assert curves_left.shape == curves_right.shape, "The curves must have the same shape!"
+    assert curves_left.ndim == 3, "The curves must be 3D!"
+
+    # 1. compute the mirror plane!
+    mirror_plane = np.concatenate([curves_left[0], curves_left[-1]])
+
+    # 2. compute the normal of the mirror plane
+    # A * p = B -> p = (A^T * A)^-1 * A^T * B
+    A = np.concatenate([mirror_plane[:, :2], np.ones((mirror_plane.shape[0], 1))], axis=1)
+    B = mirror_plane[:, 2]
+    plane_params = np.linalg.lstsq(A, B, rcond=None)[0]
+    # compute the normal of the plane
+    normal = np.array([plane_params[0], plane_params[1], -1])
+    normal /= np.linalg.norm(normal)
+
+    points_l = np.asarray(curves_left).reshape(-1, 3)
+    points_r = np.asarray(curves_right)
+    
+    points_r = np.flip(points_r, axis=0).reshape(-1, 3) # clip so the curve can be one-to-one mapped
+    points_r = mirror_along_plane(normal, points_r)
+    points_r += normal * np.linalg.norm(points_r[0] - points_l[0]) # move the points to the left side
+
+    # 3. compute the distance between the points
+    distances = np.linalg.norm(points_l - points_r, axis=1)
+    return distances, points_l, points_r
