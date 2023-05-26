@@ -396,8 +396,7 @@ def volume_pairwise(
     assert curves_left.ndim == 3, "The curves must be 3D!"
 
     # 1. compute the mirror plane!
-    mirror_plane = np.concatenate([curves_left[0], curves_left[-1]])
-
+    mirror_plane = np.concatenate([curves_left[0], curves_left[-1], curves_right[0], curves_right[-1]])
     # 2. compute the normal of the mirror plane
     # A * p = B -> p = (A^T * A)^-1 * A^T * B
     A = np.concatenate([mirror_plane[:, :2], np.ones((mirror_plane.shape[0], 1))], axis=1)
@@ -407,13 +406,21 @@ def volume_pairwise(
     normal = np.array([plane_params[0], plane_params[1], -1])
     normal /= np.linalg.norm(normal)
 
-    points_l = np.asarray(curves_left).reshape(-1, 3)
-    points_r = np.asarray(curves_right)
+    points_l = np.array(curves_left, copy=True).reshape(-1, 3)
+    points_r = np.array(curves_right, copy=True)
     
     points_r = np.flip(points_r, axis=0).reshape(-1, 3) # clip so the curve can be one-to-one mapped
     points_r = mirror_along_plane(normal, points_r)
-    points_r += normal * np.linalg.norm(points_r[0] - points_l[0]) # move the points to the left side
 
+    # take random point from the left side, and check the / 
+    point_in_l = curves_left[2, 3] # TODO make this better...
+    dot_l = np.dot(point_in_l, normal)
+    if dot_l < 0:
+        points_r -= normal * np.linalg.norm(points_r[0] - points_l[0])
+    elif dot_l > 0:
+        points_r += normal * np.linalg.norm(points_r[0] - points_l[0])
+    else:
+        raise ValueError("The point is on the plane!")
     # 3. compute the distance between the points
     distances = np.linalg.norm(points_l - points_r, axis=1)
 
