@@ -6,6 +6,7 @@ Email: tim.buechner@uni-jena.de
 """
 __all__ = ["compute_corc", "compute_corc_time", "inverse_tranform"]
 
+import time
 from typing import Optional, Union
 
 import numpy as np
@@ -15,6 +16,24 @@ from corc.core.postprocess import humphrey
 from corc.core.preprocess import preprocess_point_cloud
 from corc.core.process import corc_feature
 
+class _TIMER:
+    def __init__(self) -> None:
+        self._start = None
+        self._end = None
+        self._verbose = False
+
+    def set_verbose(self, verbose: bool) -> None:
+        self._verbose = verbose
+
+    def tick(self) -> None:
+        self._start = time.time()
+
+    def tock(self, msg: str) -> None:
+        self._end = time.time()
+        if self._verbose:
+            print(f"{msg}: {self._end - self._start:4.5f} s")
+
+timer = _TIMER()
 
 def inverse_tranform(
     pcd: np.ndarray,
@@ -56,6 +75,8 @@ def compute_corc(
     n_curves: int = 128,
     n_points: int = 128,
     delta: Optional[float] = None,
+    palsy_right: bool = False,
+    verbose: bool = False,
     **kwargs,
 ) -> np.ndarray:
     """
@@ -132,52 +153,24 @@ def compute_corc(
         Shape: (n_curves, n_points, 3)
     """
     
-    add_points = 1 + int(kwargs.get("fix_end_point", False))
-    n_points += add_points
-
-    point_cloud, crop_radius, transforms = preprocess_point_cloud(point_cloud, landmarks, **kwargs)
-    points_3d_fitted = corc_feature(point_cloud, crop_radius, delta=delta, n_curves=n_curves, n_points=n_points, **kwargs)
-    if (iter := kwargs.get("smooth_iterations", 1)) != 0:
-        points_3d_fitted = humphrey(
-            points_3d_fitted,
-            n_curves=n_curves,
-            n_points=n_points,
-            alpha=kwargs.get("smooth_alpha", 0.5),
-            beta=kwargs.get("smooth_beta", 0.5),
-            iterations=iter,
-        )
-
-    # Remove the two points we added for the spline fitting
-    points_3d_fitted = points_3d_fitted.reshape((n_curves, n_points, 3))[..., :-add_points, :]
-    return inverse_tranform(points_3d_fitted, *transforms, landmarks.nose_tip())
-
-def compute_corc_time(
-    point_cloud: np.ndarray,
-    landmarks: lm.Landmarks,
-    n_curves: int = 128,
-    n_points: int = 128,
-    delta: Optional[float] = None,
-    palsy_right: bool = False,
-    **kwargs,
-) -> np.ndarray:
-    import time
+    timer.set_verbose(verbose)
     
-    t = time.time()
+    timer.tick()
     add_points = 1 + int(kwargs.get("fix_end_point", False))
     n_points += add_points
-    print(f"[CORC] setup: {time.time() - t}")
+    timer.tock("[CORC] setup")
 
-    t = time.time()
+    timer.tick() 
     point_cloud, crop_radius, transforms = preprocess_point_cloud(point_cloud, landmarks, **kwargs)
     if palsy_right:
         point_cloud[:, 0] *= -1  # Flip the point cloud on the x-axis
-    print(f"[CORC] preprocess_point_cloud: {time.time() - t}")
+    timer.tock("[CORC] preprocess_point_cloud")
 
-    t = time.time()
+    timer.tick() 
     points_3d_fitted = corc_feature(point_cloud, crop_radius, delta=delta, n_curves=n_curves, n_points=n_points, **kwargs)
-    print(f"[CORC] corc_feature: {time.time() - t}")
+    timer.tock("[CORC] corc_feature")
     
-    t = time.time()
+    timer.tick() 
     if (iter := kwargs.get("smooth_iterations", 1)) != 0:
         points_3d_fitted = humphrey(
             points_3d_fitted,
@@ -187,18 +180,20 @@ def compute_corc_time(
             beta=kwargs.get("smooth_beta", 0.5),
             iterations=iter,
         )
-    print(f"[CORC] humphrey: {time.time() - t}")
-
-    t = time.time()
+    timer.tock("[CORC] humphrey")
+    timer.tick() 
     # Remove the two points we added for the spline fitting
     points_3d_fitted = points_3d_fitted.reshape((n_curves, n_points, 3))[..., :-add_points, :]
-    print(f"[CORC] reshape: {time.time() - t}")
+    timer.tock("[CORC] reshape")
     
     if kwargs.get("do_offset", False):
         points_3d_fitted += np.array([0.0, 0.0, 2.0])
     
-    t = time.time()
-    print(f"[CORC] inverse_tranform: {time.time() - t}")
     if kwargs.get("more_output", False):
         return points_3d_fitted, transforms, crop_radius
     return points_3d_fitted
+
+def compute_corc_time(
+    **kwargs,
+) -> np.ndarray:
+    return compute_corc(verbose=True, **kwargs)
