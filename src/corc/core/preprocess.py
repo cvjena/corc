@@ -114,71 +114,29 @@ def preprocess_point_cloud(
             3. Translation vector 1
             4. Translation vector 2
     """
-
-    kwargs["perimeter_nose_tip"] = kwargs.get("perimeter_nose_tip", 0.15)
-    kwargs["threshold_z_axis"] = kwargs.get("threshold_z_axis", 0.1)
-
-    # # scale everything
-    # scale = compute_scale_between_points(
-    #     np.nanmean(landmarks.eye_left(), axis=0),
-    #     np.nanmean(landmarks.eye_right(), axis=0),
-    # )
-    # points *= scale
-    # landmarks.rescale(scale)
-    scale = 1.0
-
     if landmarks.nose_tip() is None:
-        nose_tip_1 = __estimate_nosetip_location(points, landmarks)
+        nose_tip = __estimate_nosetip_location(points, landmarks)
     else:
-        nose_tip_1 = landmarks.nose_tip()
+        nose_tip = landmarks.nose_tip()
 
     rotation_matrix = utils.rotation_from_euler_angles(*landmarks.get_head_pose())
 
-    # center the all the points around the nose point
-    # rotate the point cloud with the rotation matrix
-    points[:] -= nose_tip_1
-    landmarks.translate(-nose_tip_1)
+    points[:] -= nose_tip
+    landmarks.translate(-nose_tip)
 
     points = np.dot(points, rotation_matrix)
     landmarks.rotate(rotation_matrix)
 
-    # z_side = np.sum(points[:, 2] > 0)
-    # # if the majority of points is on the positive side
-    # # mirror them to the other side
-    # if z_side > points.shape[0] // 4:
-    #     points[:, 1] *= -1
-    #     points[:, 2] *= -1
-    #     landmarks.flip_z()
-
-    # check for better nose tip location: we look around the current nose tip
-    # and check if there is a point which is further into the z axis
-    # this works as the points area already moved and rotated such that the nose
-    # is the  center of the coordinate system
-    # vertex_distance = np.linalg.norm(points, axis=1)
-    # points_around_nosetip = points[vertex_distance < kwargs["perimeter_nose_tip"]]
-    # nose_tip_2 = points_around_nosetip[np.argmax(points_around_nosetip[:, 2])]
-    # points[:] -= nose_tip_2
-    # landmarks.translate(-nose_tip_2)
-    nose_tip_2 = np.array([0.0, 0.0, 0.0])
-        
-    # remove all points infront of the nosetip
-    # iow only keep ones which have lower z value as 0.1
-    # mask_z = points[:, 2] < kwargs["threshold_z_axis"]
-    # points = points[mask_z]
-
-    # calculate the distance (easy because centered around the nose)
     vertex_distance = np.linalg.norm(points, axis=1)
 
     crop_radius = kwargs.get("crop_radius_unit", None)
     if crop_radius is None:
         # we use the lower chin as the cropping boarder
         if landmarks.jaw() is not None and not np.isnan(np.sum(landmarks.jaw())):
-            crop_radius = np.linalg.norm(np.abs(nose_tip_2 - landmarks.jaw()))
+            crop_radius = np.linalg.norm(np.abs(landmarks.jaw()))
         elif landmarks.jaw_lower() is not None and not np.isnan(landmarks.jaw_lower()).all():
-            crop_radius = np.linalg.norm(np.abs(nose_tip_2 - np.nanmean(landmarks.jaw_lower(), axis=0)))
+            crop_radius = np.linalg.norm(np.abs(np.nanmean(landmarks.jaw_lower(), axis=0)))
         else:
-            crop_radius = 1.5
-    else:
-        crop_radius *= scale
+            crop_radius = 85 #mm
 
-    return points[vertex_distance < crop_radius, :], float(crop_radius), (nose_tip_2, rotation_matrix, nose_tip_1, scale)
+    return points[vertex_distance < crop_radius, :], float(crop_radius), (rotation_matrix, nose_tip)
