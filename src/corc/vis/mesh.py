@@ -27,3 +27,5 @@ def mirror_mesh(
         verts = verts + translation
 
     mesh.vertices = o3d.utility.Vector3dVector(verts)
+    # change the triangle winding order
+    mesh.triangles = o3d.utility.Vector3iVector(np.asarray(mesh.triangles)[:, ::-1])
