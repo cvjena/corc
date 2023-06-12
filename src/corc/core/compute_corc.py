@@ -6,11 +6,9 @@ Email: tim.buechner@uni-jena.de
 """
 __all__ = ["compute_corc", "compute_corc_time", "inverse_tranform"]
 
-import copy
 from typing import Optional, Union
 
 import numpy as np
-import open3d as o3d
 from corc import landmarks as lm
 
 from corc.core.postprocess import humphrey
