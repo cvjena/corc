@@ -4,7 +4,6 @@ Copyright (c) Computer Vision Group - FSU Jena
 Author: Tim Büchner
 Email: tim.buechner@uni-jena.de
 """
-from typing import Union
 import numpy as np
 from collections import namedtuple
 
