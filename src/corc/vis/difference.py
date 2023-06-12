@@ -1,4 +1,4 @@
-__all__ = ["volume_diff_area_map", "volume_diff_heat_map"]
+__all__ = ["volume_diff_area_map", "volume_diff_heat_map", "color_from_dist"]
 
 import open3d as o3d
 import numpy as np
@@ -76,3 +76,11 @@ def volume_diff_heat_map(
         "geometry" : mesh_diff,
         "mat" : mat,
     }
+
+def color_from_dist(
+    distance: np.ndarray,
+    max_distance_mm: float = 10.0,
+) -> np.ndarray:
+    assert distance.ndim == 1
+    colors = cmap(distance / max_distance_mm)[:, :3]
+    return colors
