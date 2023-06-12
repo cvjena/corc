@@ -69,7 +69,7 @@ def compute_corc(
     palsy_right: bool = False,
     verbose: bool = False,
     **kwargs,
-) -> np.ndarray:
+) -> tuple[np.ndarray, tuple[np.ndarray, np.ndarray], float]:
     """
     Compute the radial curve representation of the face.
     
@@ -144,6 +144,12 @@ def compute_corc(
     np.ndarray
         The radial curve representation of the face
         Shape: (n_curves, n_points, 3)
+    tuple[np.ndarray, np.ndarray]
+        The translation and rotation vectors used for the normalization.
+        The translation vector is the nose tip location.
+        The rotation vector is the head pose.
+    float
+        The radius used for the cropping.
     """
     
     timer.set_verbose(verbose)
@@ -160,13 +166,13 @@ def compute_corc(
     timer.tock("[CORC] preprocess_point_cloud")
 
     timer.tick() 
-    points_3d_fitted = corc_feature(point_cloud, crop_radius, delta=delta, n_curves=n_curves, n_points=n_points, **kwargs)
+    curves = corc_feature(point_cloud, crop_radius, delta=delta, n_curves=n_curves, n_points=n_points, **kwargs)
     timer.tock("[CORC] corc_feature")
     
     timer.tick() 
     if (iter := kwargs.get("smooth_iterations", 1)) != 0:
-        points_3d_fitted = humphrey(
-            points_3d_fitted,
+        curves = humphrey(
+            curves,
             n_curves=n_curves,
             n_points=n_points,
             alpha=kwargs.get("smooth_alpha", 0.5),
@@ -174,17 +180,16 @@ def compute_corc(
             iterations=iter,
         )
     timer.tock("[CORC] humphrey")
-    timer.tick() 
+
+    timer.tick()
     # Remove the two points we added for the spline fitting
-    points_3d_fitted = points_3d_fitted.reshape((n_curves, n_points, 3))[..., :-add_points, :]
+    curves = curves.reshape((n_curves, n_points, 3))[..., :-add_points, :]
     timer.tock("[CORC] reshape")
     
     if kwargs.get("do_offset", False):
-        points_3d_fitted += np.array([0.0, 0.0, 2.0])
+        curves += np.array([0.0, 0.0, 2.0])
     
-    if kwargs.get("more_output", False):
-        return points_3d_fitted, transforms, crop_radius
-    return points_3d_fitted
+    return curves, transforms, crop_radius
 
 def compute_corc_time(
     **kwargs,
