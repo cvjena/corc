@@ -6,9 +6,12 @@ Email: tim.buechner@uni-jena.de
 """
 from typing import Union
 import numpy as np
+from collections import namedtuple
 
 from corc import landmarks as lms
 from corc import utils
+
+Transform = namedtuple("transform", ["rotation", "translation"])
 
 def __estimate_nosetip_location(
     points: np.ndarray, landmarks: lms.Landmarks
@@ -81,7 +84,7 @@ def preprocess_point_cloud(
     points: np.ndarray, 
     lm: lms.Landmarks, 
     **kwargs
-) -> tuple[np.ndarray, float, tuple[Union[np.ndarray, float], ...]]:
+) -> tuple[np.ndarray, float, Transform]:
     """This function preprocess the head point cloud.
 
     These steps include:
@@ -130,4 +133,4 @@ def preprocess_point_cloud(
         else:
             crop_radius = 85 #mm
 
-    return points[vertex_distance < crop_radius, :], float(crop_radius), (rotation_matrix, nose_tip)
+    return points[vertex_distance < crop_radius, :], float(crop_radius), Transform(rotation_matrix, nose_tip)
