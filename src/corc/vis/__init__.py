@@ -6,3 +6,5 @@ from corc.vis.mesh import mirror_mesh
 
 BLUE = [ 44/255,  111/255,  187/255] # matte blue
 RED  = [201/255,   44/255,   17/255] # thunderbird red
+
+# add some just as call for LEFT and RIGHT

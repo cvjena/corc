@@ -4,13 +4,13 @@ Copyright (c) Computer Vision Group - FSU Jena
 Author: Tim Büchner
 Email: tim.buechner@uni-jena.de
 """
-__all__ = ["compute_corc", "compute_corc_time"]
+__all__ = ["compute_corc", "compute_corc_time", "inverse_tranform"]
 
 import copy
 from typing import Optional, Union
 
 import numpy as np
-
+import open3d as o3d
 from corc import landmarks as lm
 
 from corc.core.postprocess import humphrey
@@ -157,14 +157,13 @@ def compute_corc(
     points_3d_fitted = points_3d_fitted.reshape((n_curves, n_points, 3))[..., :-add_points, :]
     return inverse_tranform(points_3d_fitted, *transforms, landmarks.nose_tip())
 
-
-
 def compute_corc_time(
     point_cloud: np.ndarray,
     landmarks: lm.Landmarks,
     n_curves: int = 128,
     n_points: int = 128,
     delta: Optional[float] = None,
+    palsy_right: bool = False,
     **kwargs,
 ) -> np.ndarray:
     import time
@@ -181,6 +180,10 @@ def compute_corc_time(
 
     t = time.time()
     point_cloud_, crop_radius, transforms = preprocess_point_cloud(point_cloud_, landmarks_, **kwargs)
+    if palsy_right:
+        # Flip the point cloud on the x-axis
+        point_cloud_[:, 0] *= -1
+
     print(f"[CORC] preprocess_point_cloud: {time.time() - t}")
 
 
@@ -207,10 +210,16 @@ def compute_corc_time(
     
     # TODO remove later
     # move slightly to the front
-    points_3d_fitted += np.array([0.002, -0.002, 0.01])
+
+    if kwargs.get("do_offset", False):
+        points_3d_fitted += np.array([0.0, 0.0, 2.0])
     
     t = time.time()
-    inv = inverse_tranform(points_3d_fitted, *transforms, landmarks.nose_tip())
+    # inv = points_3d_fitted
+    # inv = inverse_tranform(points_3d_fitted, *transforms, landmarks.nose_tip())
     print(f"[CORC] inverse_tranform: {time.time() - t}")
-    return inv
+    
+    if kwargs.get("more_output", False):
+        return points_3d_fitted, transforms, crop_radius, point_cloud_, points_3d_fitted
+    return points_3d_fitted
     # return inverse_tranform(points_3d_fitted, *transforms, landmarks.nose_tip())
