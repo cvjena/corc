@@ -118,13 +118,14 @@ def preprocess_point_cloud(
     kwargs["perimeter_nose_tip"] = kwargs.get("perimeter_nose_tip", 0.15)
     kwargs["threshold_z_axis"] = kwargs.get("threshold_z_axis", 0.1)
 
-    # scale everything
-    scale = compute_scale_between_points(
-        np.nanmean(landmarks.eye_left(), axis=0),
-        np.nanmean(landmarks.eye_right(), axis=0),
-    )
-    points *= scale
-    landmarks.rescale(scale)
+    # # scale everything
+    # scale = compute_scale_between_points(
+    #     np.nanmean(landmarks.eye_left(), axis=0),
+    #     np.nanmean(landmarks.eye_right(), axis=0),
+    # )
+    # points *= scale
+    # landmarks.rescale(scale)
+    scale = 1.0
 
     if landmarks.nose_tip() is None:
         nose_tip_1 = __estimate_nosetip_location(points, landmarks)
@@ -162,8 +163,8 @@ def preprocess_point_cloud(
         
     # remove all points infront of the nosetip
     # iow only keep ones which have lower z value as 0.1
-    mask_z = points[:, 2] < kwargs["threshold_z_axis"]
-    points = points[mask_z]
+    # mask_z = points[:, 2] < kwargs["threshold_z_axis"]
+    # points = points[mask_z]
 
     # calculate the distance (easy because centered around the nose)
     vertex_distance = np.linalg.norm(points, axis=1)
