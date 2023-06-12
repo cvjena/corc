@@ -137,12 +137,8 @@ def compute_corc(
     add_points = 1 + int(kwargs.get("fix_end_point", False))
     n_points += add_points
 
-    point_cloud_ = copy.deepcopy(point_cloud)
-    landmarks_ = copy.deepcopy(landmarks)
-
-    point_cloud_, crop_radius, transforms = preprocess_point_cloud(point_cloud_, landmarks_, **kwargs)
-
-    points_3d_fitted = corc_feature(point_cloud_, crop_radius, delta=delta, n_curves=n_curves, n_points=n_points, **kwargs)
+    point_cloud, crop_radius, transforms = preprocess_point_cloud(point_cloud, landmarks, **kwargs)
+    points_3d_fitted = corc_feature(point_cloud, crop_radius, delta=delta, n_curves=n_curves, n_points=n_points, **kwargs)
     if (iter := kwargs.get("smooth_iterations", 1)) != 0:
         points_3d_fitted = humphrey(
             points_3d_fitted,
@@ -174,21 +170,13 @@ def compute_corc_time(
     print(f"[CORC] setup: {time.time() - t}")
 
     t = time.time()
-    point_cloud_ = copy.deepcopy(point_cloud)
-    landmarks_ = copy.deepcopy(landmarks)
-    print(f"[CORC] deepcopy: {time.time() - t}")
-
-    t = time.time()
-    point_cloud_, crop_radius, transforms = preprocess_point_cloud(point_cloud_, landmarks_, **kwargs)
+    point_cloud, crop_radius, transforms = preprocess_point_cloud(point_cloud, landmarks, **kwargs)
     if palsy_right:
-        # Flip the point cloud on the x-axis
-        point_cloud_[:, 0] *= -1
-
+        point_cloud[:, 0] *= -1  # Flip the point cloud on the x-axis
     print(f"[CORC] preprocess_point_cloud: {time.time() - t}")
 
-
     t = time.time()
-    points_3d_fitted = corc_feature(point_cloud_, crop_radius, delta=delta, n_curves=n_curves, n_points=n_points, **kwargs)
+    points_3d_fitted = corc_feature(point_cloud, crop_radius, delta=delta, n_curves=n_curves, n_points=n_points, **kwargs)
     print(f"[CORC] corc_feature: {time.time() - t}")
     
     t = time.time()
@@ -208,18 +196,11 @@ def compute_corc_time(
     points_3d_fitted = points_3d_fitted.reshape((n_curves, n_points, 3))[..., :-add_points, :]
     print(f"[CORC] reshape: {time.time() - t}")
     
-    # TODO remove later
-    # move slightly to the front
-
     if kwargs.get("do_offset", False):
         points_3d_fitted += np.array([0.0, 0.0, 2.0])
     
     t = time.time()
-    # inv = points_3d_fitted
-    # inv = inverse_tranform(points_3d_fitted, *transforms, landmarks.nose_tip())
     print(f"[CORC] inverse_tranform: {time.time() - t}")
-    
     if kwargs.get("more_output", False):
-        return points_3d_fitted, transforms, crop_radius, point_cloud_, points_3d_fitted
+        return points_3d_fitted, transforms, crop_radius
     return points_3d_fitted
-    # return inverse_tranform(points_3d_fitted, *transforms, landmarks.nose_tip())

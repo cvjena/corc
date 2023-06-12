@@ -7,12 +7,11 @@ Email: tim.buechner@uni-jena.de
 from typing import Union
 import numpy as np
 
-from corc import landmarks as lm
+from corc import landmarks as lms
 from corc import utils
 
-
 def __estimate_nosetip_location(
-    points: np.ndarray, landmarks: lm.Landmarks
+    points: np.ndarray, landmarks: lms.Landmarks
 ) -> np.ndarray:
     """Estimate the nose tip location from given nose landmarks
 
@@ -80,7 +79,7 @@ def compute_scale_between_points(p_a: np.ndarray, p_b: np.ndarray) -> float:
 
 def preprocess_point_cloud(
     points: np.ndarray, 
-    landmarks: lm.Landmarks, 
+    lm: lms.Landmarks, 
     **kwargs
 ) -> tuple[np.ndarray, float, tuple[Union[np.ndarray, float], ...]]:
     """This function preprocess the head point cloud.
@@ -114,28 +113,20 @@ def preprocess_point_cloud(
             3. Translation vector 1
             4. Translation vector 2
     """
-    if landmarks.nose_tip() is None:
-        nose_tip = __estimate_nosetip_location(points, landmarks)
-    else:
-        nose_tip = landmarks.nose_tip()
-
-    rotation_matrix = utils.rotation_from_euler_angles(*landmarks.get_head_pose())
+    nose_tip = lm.nose_tip().copy() if lm.nose_tip() is not None else __estimate_nosetip_location(points, lm)
+    rotation_matrix = utils.rotation_from_euler_angles(*lm.get_head_pose())
 
     points[:] -= nose_tip
-    landmarks.translate(-nose_tip)
-
     points = np.dot(points, rotation_matrix)
-    landmarks.rotate(rotation_matrix)
 
     vertex_distance = np.linalg.norm(points, axis=1)
-
     crop_radius = kwargs.get("crop_radius_unit", None)
     if crop_radius is None:
         # we use the lower chin as the cropping boarder
-        if landmarks.jaw() is not None and not np.isnan(np.sum(landmarks.jaw())):
-            crop_radius = np.linalg.norm(np.abs(landmarks.jaw()))
-        elif landmarks.jaw_lower() is not None and not np.isnan(landmarks.jaw_lower()).all():
-            crop_radius = np.linalg.norm(np.abs(np.nanmean(landmarks.jaw_lower(), axis=0)))
+        if lm.jaw() is not None and not np.isnan(np.sum(lm.jaw())):
+            crop_radius = np.linalg.norm(np.abs(lm.nose_tip() - lm.jaw()))
+        elif lm.jaw_lower() is not None and not np.isnan(lm.jaw_lower()).all():
+            crop_radius = np.linalg.norm(np.abs(lm.nose_tip() - np.nanmean(lm.jaw_lower(), axis=0)))
         else:
             crop_radius = 85 #mm
 
