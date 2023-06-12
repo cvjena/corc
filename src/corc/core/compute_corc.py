@@ -7,7 +7,7 @@ Email: tim.buechner@uni-jena.de
 __all__ = ["compute_corc", "compute_corc_time", "inverse_tranform"]
 
 import time
-from typing import Optional, Union
+from typing import Optional
 
 import numpy as np
 from corc import landmarks as lm
@@ -37,7 +37,8 @@ timer = _TIMER()
 
 def inverse_tranform(
     pcd: np.ndarray,
-    *transforms: Union[np.ndarray, float],
+    translation: np.ndarray,
+    rotation: np.ndarray,
 ) -> np.ndarray:
     """This function applies the inverse transformation to the point cloud.
     
@@ -47,27 +48,17 @@ def inverse_tranform(
     Thus all tranforms are applied in reverse order.
 
     Args:
-        pcd (np.ndarray): _description_
+        pcd (np.ndarray): The point cloud to transform.
+        translation (np.ndarray): The translation vector.
+        rotation (np.ndarray): The rotation matrix.
 
     Returns:
-        np.ndarray: _description_
+        np.ndarray: The transformed point cloud. Should be in the original
+        orientation and position of the 3d surface scan.
     """
-    if len(transforms) == 0:
-        return pcd
-    
-    for transform in transforms:
-        # if it is a rotation matrix
-        if isinstance(transform, np.ndarray):
-            if transform.shape == (3, 3):
-                pcd = np.dot(pcd, transform.T)
-            else:
-                pcd += transform 
-        elif isinstance(transform, float):
-            pcd = pcd / transform 
-        else:
-            raise ValueError(f"Unknown transform type: [{type(transform)}] {transform}")
+    pcd = pcd @ rotation.T
+    pcd = pcd + translation
     return pcd
-
 
 def compute_corc(
     point_cloud: np.ndarray,
