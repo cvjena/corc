@@ -21,7 +21,7 @@ class Landmarks3DFEMVLM(Landmarks):
         return self.landmarks[0:8]
 
     def nose_tip(self) -> np.ndarray:
-        return self.landmarks[83:84]
+        return self.landmarks[-1]
 
     def nose(self) -> np.ndarray:
         return self.landmarks[36:48]
