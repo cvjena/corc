@@ -134,6 +134,8 @@ def compute_corc(
     processing kwargs: dict, optional
         fix_end_point: bool, optional
             fix the end point of the spline. Default to True.
+        angle_offset: int, optional
+            the angle offset for the spline fitting. Defaults to 0.
             
     smoothing kwargs: dict, optional
         Used in the Humphrey algorithm. Please note we only smooth in the 

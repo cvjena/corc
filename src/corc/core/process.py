@@ -44,8 +44,8 @@ def corc_feature(
         additional arguments for `to_spline_3d`
         fix_end_point: bool, optional
             fix the end point of the spline. Default to True.
-        graph_fit: bool, optional
-            whether to use the new graph fit algorithm. Default to True.
+        angle_offset: int, optional
+            the angle offset for the spline fitting. Defaults to 0.
 
     Returns
     -------
@@ -54,7 +54,8 @@ def corc_feature(
     """
     # we interpolate a bit more and cut the last part to avoid spikes in the end
     # this is not a problem as the end of spline does not contain a lot of information
-    rotations = utils.rotz_v(np.linspace(0, 360, num=n_curves, endpoint=False))
+    offset = kwargs.get("angle_offset", 0)
+    rotations = utils.rotz_v(np.linspace(0+offset, 360+offset, num=n_curves, endpoint=False)) 
     sample_space = np.linspace(0, 1, n_points, endpoint=True)
     radial_slices = to_radial_slices(points, rotations, n_curves, delta)
 
